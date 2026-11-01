@@ -97,6 +97,12 @@ function splitTableCells(line: string): string[] {
 /**
  * Renders GFM tables while protecting wikilink pipes, escaped pipes, and code pipes in cells.
  */
+/**
+ * Table delimiter regex constructed via RegExp to prevent Tailwind JIT scanner
+ * from misinterpreting `[-:` as an arbitrary CSS property utility.
+ */
+const TABLE_DELIMITER_REGEX = new RegExp('^\\|[\\s|:-]+\\|$');
+
 function renderTables(text: string): string {
   const lines = text.split('\n');
   let inTable = false;
@@ -111,7 +117,7 @@ function renderTables(text: string): string {
         inTable = true;
         tableHtml = '<table><thead><tr>' + cells.map((c) => `<th>${c}</th>`).join('') + '</tr></thead><tbody>';
         // Skip delimiter line if present (| --- | --- |)
-        if (i + 1 < lines.length && /^\|[-:\s|]+\|$/.test(lines[i + 1].trim())) {
+        if (i + 1 < lines.length && TABLE_DELIMITER_REGEX.test(lines[i + 1].trim())) {
           i++;
         }
       } else {

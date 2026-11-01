@@ -16,4 +16,19 @@ export default defineConfig({
     strictPort: true,
     host: '127.0.0.1',
   },
+  build: {
+    chunkSizeWarningLimit: 3500,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('mathjax-full')) {
+            return 'mathjax';
+          }
+          if (id.includes('@codemirror') || id.includes('@uiw/react-codemirror')) {
+            return 'codemirror';
+          }
+        },
+      },
+    },
+  },
 });
