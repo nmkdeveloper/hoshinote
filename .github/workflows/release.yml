@@ -1,0 +1,96 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release Tag Name (e.g. v0.1.0)'
+        required: false
+        default: ''
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-publish:
+    name: Build & Release (${{ matrix.platform }})
+    runs-on: ${{ matrix.platform }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: 'windows-latest'
+            build_name: 'Windows (x64)'
+          - platform: 'ubuntu-22.04'
+            build_name: 'Linux (x64)'
+          - platform: 'macos-latest'
+            build_name: 'macOS (Apple Silicon)'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Linux GTK/WebKit dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            build-essential \
+            curl \
+            wget \
+            file \
+            libxdo-dev \
+            libssl-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 12.5.1
+          run_install: false
+
+      - name: Setup Node.js 20 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Tauri Desktop Bundles & Attach to Release
+        uses: tauri-apps/tauri-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.event.inputs.tag || github.ref_name }}
+          releaseName: 'Hoshinote ${{ github.event.inputs.tag || github.ref_name }}'
+          releaseBody: |
+            ## Hoshinote Desktop Release
+
+            Production desktop note-taking application inspired by Obsidian.
+            Featuring Markdown editing, MathJax formulas, and interactive 2D graph view.
+
+            ### Package Assets:
+            - **Windows**: NSIS installer (`.exe`) and WiX installer (`.msi`)
+            - **Linux**: Debian package (`.deb`) and standalone AppImage (`.AppImage`)
+            - **macOS**: Apple Silicon installer (`.dmg`) and app bundle (`.app`)
+          releaseDraft: false
+          prerelease: false

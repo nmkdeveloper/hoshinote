@@ -1,0 +1,247 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { Search, FileText, ArrowRight, CornerDownLeft, Sparkles, X } from 'lucide-react';
+import { searchNotes, listNotes } from '../../lib/api';
+import type { SearchResult, NoteSummary } from '../../types';
+
+export interface QuickSwitcherModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSelectNote: (noteId: string) => void;
+  onCreateNote?: (title: string) => void;
+}
+
+export type SwitcherItem =
+  | { type: 'search'; item: SearchResult }
+  | { type: 'recent'; item: NoteSummary };
+
+export const QuickSwitcherModal: React.FC<QuickSwitcherModalProps> = ({
+  isOpen,
+  onClose,
+  onSelectNote,
+  onCreateNote,
+}) => {
+  const [query, setQuery] = useState('');
+  const [items, setItems] = useState<SwitcherItem[]>([]);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+
+  // Focus input on modal open
+  useEffect(() => {
+    if (isOpen) {
+      setQuery('');
+      setSelectedIndex(0);
+      setTimeout(() => inputRef.current?.focus(), 50);
+    }
+  }, [isOpen]);
+
+  // Debounced search query (150ms) or recent notes when query is empty
+  useEffect(() => {
+    if (!isOpen) return;
+
+    if (!query.trim()) {
+      setIsLoading(true);
+      listNotes({ limit: 10, is_archived: false, sort_by: 'updated_at', order: 'desc' })
+        .then((notes) => {
+          setItems(notes.map((n) => ({ type: 'recent', item: n })));
+          setSelectedIndex(0);
+        })
+        .catch(console.error)
+        .finally(() => setIsLoading(false));
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsLoading(true);
+      try {
+        const results = await searchNotes(query.trim());
+        setItems(results.map((r) => ({ type: 'search', item: r })));
+        setSelectedIndex(0);
+      } catch (err) {
+        console.error('Quick Switcher search error:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    }, 150);
+
+    return () => clearTimeout(timer);
+  }, [query, isOpen]);
+
+  // Keep selected item scrolled into view
+  useEffect(() => {
+    const activeEl = listRef.current?.children[selectedIndex] as HTMLElement | undefined;
+    if (activeEl) {
+      activeEl.scrollIntoView({ block: 'nearest' });
+    }
+  }, [selectedIndex]);
+
+  // Keyboard navigation
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSelectedIndex((prev) => (items.length > 0 ? (prev + 1) % items.length : 0));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSelectedIndex((prev) => (items.length > 0 ? (prev - 1 + items.length) % items.length : 0));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (items.length > 0 && items[selectedIndex]) {
+        onSelectNote(items[selectedIndex].item.id);
+        onClose();
+      } else if (query.trim() && onCreateNote) {
+        onCreateNote(query.trim());
+        onClose();
+      }
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      onClose();
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Quick Switcher"
+      className="fixed inset-0 z-50 flex items-start justify-center pt-24 bg-slate-950/70 backdrop-blur-xs"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-xl bg-slate-900 border border-slate-800 rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[70vh] animate-in fade-in zoom-in-95 duration-100"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Search Input Bar */}
+        <div className="flex items-center px-4 py-3 border-b border-slate-800/80 bg-slate-950/40">
+          <Search className="w-5 h-5 text-cyan-400 mr-3 shrink-0" />
+          <input
+            ref={inputRef}
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Type note title or content... (↑↓ to navigate, ↵ to open)"
+            aria-label="Quick search query"
+            className="flex-1 bg-transparent border-none text-sm text-slate-100 placeholder-slate-500 focus:outline-none"
+          />
+          {query && (
+            <button
+              onClick={() => setQuery('')}
+              className="text-slate-500 hover:text-slate-300 p-1"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+          {isLoading && (
+            <div className="w-4 h-4 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin ml-2 shrink-0" />
+          )}
+        </div>
+
+        {/* Results List */}
+        <div ref={listRef} className="flex-1 overflow-y-auto p-2 space-y-1">
+          {items.length === 0 ? (
+            <div className="py-12 text-center text-slate-500">
+              <Sparkles className="w-8 h-8 mx-auto mb-2 text-slate-600" />
+              <p className="text-xs">No matching notes found</p>
+              {query.trim() && onCreateNote && (
+                <button
+                  onClick={() => {
+                    onCreateNote(query.trim());
+                    onClose();
+                  }}
+                  className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-medium transition"
+                >
+                  <span>Create "{query.trim()}"</span>
+                  <CornerDownLeft className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          ) : (
+            items.map((entry, idx) => {
+              const isSelected = idx === selectedIndex;
+              const title = entry.item.title;
+              const snippet = entry.item.snippet;
+
+              return (
+                <div
+                  key={entry.item.id}
+                  onClick={() => {
+                    onSelectNote(entry.item.id);
+                    onClose();
+                  }}
+                  onMouseEnter={() => setSelectedIndex(idx)}
+                  className={`w-full text-left p-3 rounded-lg transition cursor-pointer flex items-center justify-between gap-3 ${
+                    isSelected
+                      ? 'bg-slate-800 text-slate-100 shadow-xs border border-cyan-500/30'
+                      : 'text-slate-300 hover:bg-slate-800/50 border border-transparent'
+                  }`}
+                >
+                  <div className="flex items-start gap-3 min-w-0 flex-1">
+                    <FileText
+                      className={`w-4 h-4 mt-0.5 shrink-0 ${
+                        isSelected ? 'text-cyan-400' : 'text-slate-500'
+                      }`}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium truncate">{title}</span>
+                        {entry.type === 'recent' && (
+                          <span className="text-[10px] text-slate-500 font-mono">Recent</span>
+                        )}
+                      </div>
+                      {snippet && (
+                        <div className="text-[11px] text-slate-400 mt-0.5 truncate">
+                          <HighlightedSnippet text={snippet} />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  {isSelected && <ArrowRight className="w-3.5 h-3.5 text-cyan-400 shrink-0" />}
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Footer Shortcut Hints */}
+        <div className="px-4 py-2 bg-slate-950/60 border-t border-slate-800 text-[10px] text-slate-500 flex items-center justify-between font-mono">
+          <div className="flex items-center space-x-3">
+            <span><kbd className="bg-slate-800 px-1 py-0.5 rounded">↑↓</kbd> navigate</span>
+            <span><kbd className="bg-slate-800 px-1 py-0.5 rounded">↵</kbd> select</span>
+            <span><kbd className="bg-slate-800 px-1 py-0.5 rounded">esc</kbd> close</span>
+          </div>
+          <div>{items.length} {items.length === 1 ? 'result' : 'results'}</div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
+// Safe Snippet Parser (Converts FTS5 <mark> tokens to React Elements)
+// ============================================================================
+
+export function HighlightedSnippet({ text }: { text: string }) {
+  if (!text) return null;
+  const parts = text.split(/(<mark>.*?<\/mark>)/gi);
+  return (
+    <span>
+      {parts.map((part, index) => {
+        if (part.startsWith('<mark>') && part.endsWith('</mark>')) {
+          const content = part.slice(6, -7);
+          return (
+            <mark
+              key={index}
+              className="bg-cyan-500/30 text-cyan-200 font-semibold px-0.5 rounded"
+            >
+              {content}
+            </mark>
+          );
+        }
+        return <span key={index}>{part}</span>;
+      })}
+    </span>
+  );
+}
