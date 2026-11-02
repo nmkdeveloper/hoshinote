@@ -92,8 +92,8 @@ export const BacklinksPanel: React.FC<BacklinksPanelProps> = ({
                 title={note.is_pinned ? 'Unpin note' : 'Pin note'}
                 className="p-1 rounded transition hover:opacity-80"
                 style={{
-                  color: note.is_pinned ? '#f59e0b' : theme?.colors.textSecondary || 'var(--color-text-secondary)',
-                  backgroundColor: note.is_pinned ? 'rgba(245, 158, 11, 0.15)' : 'transparent',
+                  color: note.is_pinned ? (theme?.colors.accent || 'var(--color-accent)') : theme?.colors.textSecondary || 'var(--color-text-secondary)',
+                  backgroundColor: note.is_pinned ? (theme?.colors.bgTertiary || 'var(--color-bg-tertiary)') : 'transparent',
                 }}
               >
                 <Pin className="w-3.5 h-3.5" />
@@ -105,8 +105,8 @@ export const BacklinksPanel: React.FC<BacklinksPanelProps> = ({
                 title={note.is_archived ? 'Unarchive note' : 'Archive note'}
                 className="p-1 rounded transition hover:opacity-80"
                 style={{
-                  color: note.is_archived ? '#a855f7' : theme?.colors.textSecondary || 'var(--color-text-secondary)',
-                  backgroundColor: note.is_archived ? 'rgba(168, 85, 247, 0.15)' : 'transparent',
+                  color: note.is_archived ? (theme?.colors.accent || 'var(--color-accent)') : theme?.colors.textSecondary || 'var(--color-text-secondary)',
+                  backgroundColor: note.is_archived ? (theme?.colors.bgTertiary || 'var(--color-bg-tertiary)') : 'transparent',
                 }}
               >
                 <Archive className="w-3.5 h-3.5" />
@@ -329,10 +329,8 @@ export const BacklinksPanel: React.FC<BacklinksPanelProps> = ({
                       className="flex items-center gap-1.5 truncate text-left flex-1"
                     >
                       <LinkIcon
-                        className={`w-3 h-3 shrink-0 ${
-                          isUnresolved ? 'text-amber-400' : ''
-                        }`}
-                        style={{ color: isUnresolved ? '#f59e0b' : theme?.colors.accent || 'var(--color-accent)' }}
+                        className="w-3 h-3 shrink-0"
+                        style={{ color: isUnresolved ? (theme?.colors.textSecondary || 'var(--color-text-secondary)') : (theme?.colors.accent || 'var(--color-accent)') }}
                       />
                       <span
                         className={`truncate ${

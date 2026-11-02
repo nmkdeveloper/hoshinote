@@ -240,7 +240,7 @@ export const NoteEditor = forwardRef<NoteEditorHandle, NoteEditorProps>(
             completionKeymap: true,
             lintKeymap: true,
           }}
-          className="h-full w-full text-slate-100"
+          className="h-full w-full"
         />
       </div>
     );

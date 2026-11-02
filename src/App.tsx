@@ -529,6 +529,7 @@ export function App() {
                         onSelectNote={(noteId) => setSelectedNoteId(noteId)}
                         onOpenNote={(noteId) => handleSelectNote(noteId)}
                         onCreateNote={(title) => handleCreateNote(title)}
+                        theme={currentTheme}
                       />
                     </div>
                   </div>
@@ -582,6 +583,7 @@ export function App() {
                   onSelectNote={(noteId) => setSelectedNoteId(noteId)}
                   onOpenNote={(noteId) => handleSelectNote(noteId)}
                   onCreateNote={(title) => handleCreateNote(title)}
+                  theme={currentTheme}
                 />
               </div>
             </div>

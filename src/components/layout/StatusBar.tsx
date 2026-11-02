@@ -46,10 +46,11 @@ export const StatusBar: React.FC<StatusBarProps> = ({
           <>
             <div className="h-3 w-px" style={{ backgroundColor: theme?.colors.border || 'var(--color-border)' }} />
             <div
-              className="flex items-center space-x-1 text-emerald-500 font-medium"
+              className="flex items-center space-x-1 font-medium"
+              style={{ color: theme?.colors.textPrimary || 'var(--color-text-primary)' }}
               title="Database is encrypted at rest using AES-256-GCM"
             >
-              <Lock className="w-3 h-3 text-emerald-500" />
+              <Lock className="w-3 h-3" style={{ color: theme?.colors.accent || 'var(--color-accent)' }} />
               <span>Encrypted (AES-256)</span>
             </div>
           </>
@@ -73,8 +74,8 @@ export const StatusBar: React.FC<StatusBarProps> = ({
           )}
           {saveStatus === 'saved' && (
             <>
-              <CheckCircle2 className="w-3 h-3 text-emerald-500" />
-              <span className="text-emerald-500 font-medium">Saved</span>
+              <CheckCircle2 className="w-3 h-3" style={{ color: theme?.colors.accent || 'var(--color-accent)' }} />
+              <span className="font-medium" style={{ color: theme?.colors.textPrimary || 'var(--color-text-primary)' }}>Saved</span>
             </>
           )}
           {saveStatus === 'idle' && (
@@ -85,8 +86,8 @@ export const StatusBar: React.FC<StatusBarProps> = ({
           )}
           {saveStatus === 'error' && (
             <>
-              <AlertCircle className="w-3 h-3 text-rose-500" />
-              <span className="text-rose-500 font-medium">Save failed</span>
+              <AlertCircle className="w-3 h-3" style={{ color: theme?.colors.textBold || 'var(--color-text-bold)' }} />
+              <span className="font-medium underline" style={{ color: theme?.colors.textBold || 'var(--color-text-bold)' }}>Save failed</span>
             </>
           )}
         </div>

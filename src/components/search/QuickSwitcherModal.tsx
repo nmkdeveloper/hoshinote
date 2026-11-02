@@ -261,7 +261,7 @@ export function HighlightedSnippet({ text }: { text: string }) {
           return (
             <mark
               key={index}
-              className="bg-cyan-500/30 text-cyan-200 font-semibold px-0.5 rounded"
+              className="bg-neutral-500/25 text-inherit font-semibold px-0.5 rounded border border-neutral-500/40"
             >
               {content}
             </mark>

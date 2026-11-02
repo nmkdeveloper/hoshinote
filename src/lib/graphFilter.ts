@@ -1,4 +1,5 @@
 import type { GraphData, GraphNode, GraphLink } from '../types';
+import type { ThemeConfig } from '../types/theme';
 
 export interface SimulationNode extends GraphNode {
   x?: number;
@@ -38,6 +39,27 @@ export interface FilterResult {
   matchedNodeIds: Set<string>;
 }
 
+// Pure monochrome shade palettes for dark and light themes (no blue/colored tint)
+export const MONOCHROME_DARK_PALETTE: string[] = [
+  '#ffffff', // Bright white
+  '#e5e5e5', // High-contrast light gray
+  '#cccccc', // Light gray
+  '#b3b3b3', // Medium-light gray
+  '#999999', // Medium gray
+  '#808080', // Neutral gray
+  '#666666', // Dim gray
+];
+
+export const MONOCHROME_LIGHT_PALETTE: string[] = [
+  '#171717', // Near black
+  '#2b2b2b', // Deep charcoal
+  '#404040', // Dark gray
+  '#555555', // Charcoal gray
+  '#707070', // Medium gray
+  '#888888', // Medium-light gray
+  '#a0a0a0', // Soft gray
+];
+
 // Catppuccin Mocha tag color palette
 export const CATPPUCCIN_MOCHA_PALETTE: string[] = [
   '#f38ba8', // Red
@@ -69,18 +91,38 @@ export const DEFAULT_UNTAGGED_COLOR = '#a6adc8'; // Subtext0
 export const UNRESOLVED_NODE_COLOR = '#6c7086';  // Overlay0
 
 /**
- * Deterministically maps any tag string to a Catppuccin color.
- * Uses DJB2 hash algorithm for uniform distribution across accents.
+ * Deterministically maps any tag string to a color.
+ * In dark/light mode, maps to pure monochrome shades of black, gray, and white.
+ * In Cute theme or without theme, maps to Catppuccin accents.
  */
-export function hashTagToColor(tag: string): string {
+export function hashTagToColor(tag: string, theme?: ThemeConfig): string {
   const clean = tag.replace(/^#/, '').toLowerCase().trim();
-  if (!clean) return DEFAULT_UNTAGGED_COLOR;
-  if (CATPPUCCIN_GROUPS[clean]) return CATPPUCCIN_GROUPS[clean];
+  const isMonochromeDark = theme ? (theme.id === 'dark' || (theme.isDark && !theme.id.includes('cute'))) : false;
+  const isMonochromeLight = theme ? (theme.id === 'light' || (!theme.isDark && !theme.id.includes('cute'))) : false;
+
+  if (!clean) {
+    if (isMonochromeDark) return '#888888';
+    if (isMonochromeLight) return '#666666';
+    return DEFAULT_UNTAGGED_COLOR;
+  }
 
   let hash = 5381;
   for (let i = 0; i < clean.length; i++) {
     hash = ((hash << 5) + hash) + clean.charCodeAt(i);
   }
+
+  if (isMonochromeDark) {
+    const index = Math.abs(hash) % MONOCHROME_DARK_PALETTE.length;
+    return MONOCHROME_DARK_PALETTE[index];
+  }
+
+  if (isMonochromeLight) {
+    const index = Math.abs(hash) % MONOCHROME_LIGHT_PALETTE.length;
+    return MONOCHROME_LIGHT_PALETTE[index];
+  }
+
+  if (CATPPUCCIN_GROUPS[clean]) return CATPPUCCIN_GROUPS[clean];
+
   const index = Math.abs(hash) % CATPPUCCIN_MOCHA_PALETTE.length;
   return CATPPUCCIN_MOCHA_PALETTE[index];
 }
@@ -88,16 +130,26 @@ export function hashTagToColor(tag: string): string {
 /**
  * Returns the hex color for a given node based on its unresolved status and tags.
  */
-export function getNodeColor(node: { tags?: string[]; is_unresolved?: boolean; group?: string }): string {
+export function getNodeColor(
+  node: { tags?: string[]; is_unresolved?: boolean; group?: string },
+  theme?: ThemeConfig
+): string {
+  const isMonochromeDark = theme ? (theme.id === 'dark' || (theme.isDark && !theme.id.includes('cute'))) : false;
+  const isMonochromeLight = theme ? (theme.id === 'light' || (!theme.isDark && !theme.id.includes('cute'))) : false;
+
   if (node.is_unresolved) {
+    if (isMonochromeDark) return '#555555';
+    if (isMonochromeLight) return '#a3a3a3';
     return UNRESOLVED_NODE_COLOR;
   }
   if (node.tags && node.tags.length > 0) {
-    return hashTagToColor(node.tags[0]);
+    return hashTagToColor(node.tags[0], theme);
   }
-  if (node.group && node.group !== 'general' && CATPPUCCIN_GROUPS[node.group.toLowerCase()]) {
-    return CATPPUCCIN_GROUPS[node.group.toLowerCase()];
+  if (node.group && node.group !== 'general') {
+    return hashTagToColor(node.group, theme);
   }
+  if (isMonochromeDark) return '#cccccc';
+  if (isMonochromeLight) return '#333333';
   return DEFAULT_UNTAGGED_COLOR;
 }
 

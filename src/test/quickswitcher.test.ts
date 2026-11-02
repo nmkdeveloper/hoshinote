@@ -9,8 +9,8 @@ describe('Quick Switcher HighlightedSnippet Component', () => {
     const snippet = 'Quantum <mark>Physics</mark> and <mark>Math</mark> formula';
     const html = renderToStaticMarkup(React.createElement(HighlightedSnippet, { text: snippet }));
 
-    expect(html).toContain('<mark class="bg-cyan-500/30 text-cyan-200 font-semibold px-0.5 rounded">Physics</mark>');
-    expect(html).toContain('<mark class="bg-cyan-500/30 text-cyan-200 font-semibold px-0.5 rounded">Math</mark>');
+    expect(html).toContain('<mark class="bg-neutral-500/25 text-inherit font-semibold px-0.5 rounded border border-neutral-500/40">Physics</mark>');
+    expect(html).toContain('<mark class="bg-neutral-500/25 text-inherit font-semibold px-0.5 rounded border border-neutral-500/40">Math</mark>');
     expect(html).toContain('Quantum ');
     expect(html).toContain(' and ');
     expect(html).toContain(' formula');

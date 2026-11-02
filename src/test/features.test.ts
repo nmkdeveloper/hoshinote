@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { BUILTIN_THEMES, applyTheme } from '../lib/theme';
 import { renderMarkdown, parseMarkdownWithMath } from '../lib/markdown';
 import { exportNoteToZip } from '../lib/export';
+import { hashTagToColor, getNodeColor, MONOCHROME_DARK_PALETTE, MONOCHROME_LIGHT_PALETTE } from '../lib/graphFilter';
 import type { NoteWithDetails } from '../types';
 
 describe('Themes & Appearance (Dark, Light, Cute)', () => {
@@ -149,3 +150,33 @@ describe('Single Note ZIP Export', () => {
     expect(blob.size).toBeGreaterThan(100);
   });
 });
+
+describe('Monochrome Theme Graph Engine', () => {
+  it('maps tags to pure monochrome dark shades in dark mode', () => {
+    const color = hashTagToColor('physics', BUILTIN_THEMES.dark);
+    expect(MONOCHROME_DARK_PALETTE).toContain(color);
+
+    const nodeColor = getNodeColor({ tags: ['math'] }, BUILTIN_THEMES.dark);
+    expect(MONOCHROME_DARK_PALETTE).toContain(nodeColor);
+
+    const unresolved = getNodeColor({ is_unresolved: true }, BUILTIN_THEMES.dark);
+    expect(unresolved).toBe('#555555');
+  });
+
+  it('maps tags to pure monochrome light shades in light mode', () => {
+    const color = hashTagToColor('physics', BUILTIN_THEMES.light);
+    expect(MONOCHROME_LIGHT_PALETTE).toContain(color);
+
+    const nodeColor = getNodeColor({ tags: ['math'] }, BUILTIN_THEMES.light);
+    expect(MONOCHROME_LIGHT_PALETTE).toContain(nodeColor);
+
+    const unresolved = getNodeColor({ is_unresolved: true }, BUILTIN_THEMES.light);
+    expect(unresolved).toBe('#a3a3a3');
+  });
+
+  it('preserves pastel mochi colors for cute theme', () => {
+    const cuteColor = hashTagToColor('math', BUILTIN_THEMES.cute);
+    expect(cuteColor).toBe('#89b4fa');
+  });
+});
+

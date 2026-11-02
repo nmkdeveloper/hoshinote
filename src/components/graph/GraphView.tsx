@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect, useMemo, useCallback } from 'react'
 import ForceGraph2D, { ForceGraphMethods } from 'react-force-graph-2d';
 import { Network, Loader2, RotateCcw } from 'lucide-react';
 import type { GraphData, GraphNode } from '../../types';
+import type { ThemeConfig } from '../../types/theme';
 import * as api from '../../lib/api';
 import {
   getNodeColor,
@@ -19,6 +20,7 @@ export interface GraphViewProps {
   onOpenNote?: (noteId: string) => void;
   onCreateNote: (title: string) => void;
   className?: string;
+  theme?: ThemeConfig;
 }
 
 export const GraphView: React.FC<GraphViewProps> = ({
@@ -28,6 +30,7 @@ export const GraphView: React.FC<GraphViewProps> = ({
   onOpenNote,
   onCreateNote,
   className = '',
+  theme,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const fgRef = useRef<ForceGraphMethods | undefined>(undefined);
@@ -193,6 +196,12 @@ export const GraphView: React.FC<GraphViewProps> = ({
       const isHighlighted = isHovered || highlightedNeighbors.has(node.id);
       const isDimmed = hoveredNodeId !== null && !isHighlighted;
 
+      const isDark = theme ? theme.isDark : true;
+      const accentColor = theme?.colors.accent || (isDark ? '#ffffff' : '#000000');
+      const accentHoverColor = theme?.colors.accentHover || (isDark ? '#e5e5e5' : '#222222');
+      const textColor = theme?.colors.textPrimary || (isDark ? '#ffffff' : '#000000');
+      const textSecColor = theme?.colors.textSecondary || (isDark ? '#888888' : '#666666');
+
       ctx.save();
 
       // Set opacity based on hover state
@@ -204,16 +213,16 @@ export const GraphView: React.FC<GraphViewProps> = ({
         ctx.globalAlpha = 1.0;
       }
 
-      const color = getNodeColor(node);
+      const color = getNodeColor(node, theme);
 
       // 1. Draw active selection glow / ring
       if (isSelected) {
         ctx.beginPath();
         const haloRadius = radius + 3.5 / Math.sqrt(globalScale);
         ctx.arc(x, y, haloRadius, 0, 2 * Math.PI);
-        ctx.strokeStyle = '#89b4fa';
+        ctx.strokeStyle = accentColor;
         ctx.lineWidth = 2.2 / Math.sqrt(globalScale);
-        ctx.shadowColor = '#89b4fa';
+        ctx.shadowColor = accentColor;
         ctx.shadowBlur = 10;
         ctx.stroke();
         ctx.shadowBlur = 0;
@@ -223,7 +232,7 @@ export const GraphView: React.FC<GraphViewProps> = ({
       if (isHovered && !isSelected) {
         ctx.beginPath();
         ctx.arc(x, y, radius + 2.5 / Math.sqrt(globalScale), 0, 2 * Math.PI);
-        ctx.strokeStyle = '#89dceb';
+        ctx.strokeStyle = accentHoverColor;
         ctx.lineWidth = 1.8 / Math.sqrt(globalScale);
         ctx.stroke();
       }
@@ -234,10 +243,10 @@ export const GraphView: React.FC<GraphViewProps> = ({
 
       if (node.is_unresolved) {
         // Dashed border for unresolved / phantom notes
-        ctx.fillStyle = 'rgba(108, 112, 134, 0.22)';
+        ctx.fillStyle = isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.04)';
         ctx.fill();
         ctx.setLineDash([2.5 / Math.sqrt(globalScale), 2.5 / Math.sqrt(globalScale)]);
-        ctx.strokeStyle = '#6c7086';
+        ctx.strokeStyle = textSecColor;
         ctx.lineWidth = 1.2 / Math.sqrt(globalScale);
         ctx.stroke();
         ctx.setLineDash([]);
@@ -245,7 +254,9 @@ export const GraphView: React.FC<GraphViewProps> = ({
         // Solid fill for concrete notes
         ctx.fillStyle = color;
         ctx.fill();
-        ctx.strokeStyle = isHighlighted ? '#ffffff' : 'rgba(255, 255, 255, 0.20)';
+        ctx.strokeStyle = isHighlighted
+          ? (isDark ? '#ffffff' : '#000000')
+          : (isDark ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.25)');
         ctx.lineWidth = 0.9 / Math.sqrt(globalScale);
         ctx.stroke();
       }
@@ -272,8 +283,8 @@ export const GraphView: React.FC<GraphViewProps> = ({
         const textWidth = textMetrics.width;
         const textY = y + radius + 3 / Math.sqrt(globalScale);
 
-        // Dark translucent contrast pill behind text
-        ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+        // Translucent contrast pill behind text
+        ctx.fillStyle = isDark ? 'rgba(10, 10, 10, 0.88)' : 'rgba(255, 255, 255, 0.88)';
         ctx.fillRect(
           x - textWidth / 2 - 3 / globalScale,
           textY - 1 / globalScale,
@@ -282,13 +293,17 @@ export const GraphView: React.FC<GraphViewProps> = ({
         );
 
         // Label text fill
-        ctx.fillStyle = isHighlighted ? '#74c7ec' : node.is_unresolved ? '#a6adc8' : '#e2e8f0';
+        ctx.fillStyle = isHighlighted
+          ? (isDark ? '#ffffff' : '#000000')
+          : node.is_unresolved
+          ? textSecColor
+          : textColor;
         ctx.fillText(label, x, textY);
       }
 
       ctx.restore();
     },
-    [selectedNoteId, hoveredNodeId, highlightedNeighbors]
+    [selectedNoteId, hoveredNodeId, highlightedNeighbors, theme]
   );
 
   // Custom Link Canvas Drawing Callback
@@ -310,6 +325,9 @@ export const GraphView: React.FC<GraphViewProps> = ({
         (hoveredNodeId === sourceId || hoveredNodeId === targetId);
       const isDimmed = hoveredNodeId !== null && !isConnectedToHovered;
 
+      const isDark = theme ? theme.isDark : true;
+      const accentColor = theme?.colors.accent || (isDark ? '#ffffff' : '#000000');
+
       ctx.save();
 
       // Opacity dimming
@@ -328,20 +346,20 @@ export const GraphView: React.FC<GraphViewProps> = ({
       ctx.moveTo(sx, sy);
       ctx.lineTo(tx, ty);
 
-      let strokeColor = '#94a3b8';
+      let strokeColor = isDark ? '#444444' : '#cccccc';
       let strokeWidth = 1.0 / Math.cbrt(globalScale);
 
       if (link.is_unresolved) {
         ctx.setLineDash([3 / Math.sqrt(globalScale), 3 / Math.sqrt(globalScale)]);
-        strokeColor = '#6c7086';
+        strokeColor = isDark ? '#333333' : '#d0d0d0';
         strokeWidth = 0.9 / Math.cbrt(globalScale);
       } else if (isConnectedToHovered) {
         ctx.setLineDash([]);
-        strokeColor = '#89b4fa';
+        strokeColor = accentColor;
         strokeWidth = 1.8 / Math.cbrt(globalScale);
       } else {
         ctx.setLineDash([]);
-        strokeColor = '#94a3b8';
+        strokeColor = isDark ? '#444444' : '#cccccc';
         strokeWidth = 1.0 / Math.cbrt(globalScale);
       }
 
@@ -379,7 +397,7 @@ export const GraphView: React.FC<GraphViewProps> = ({
       ctx.setLineDash([]);
       ctx.restore();
     },
-    [hoveredNodeId]
+    [hoveredNodeId, theme]
   );
 
   const focusedTitle = useMemo(() => {
@@ -392,12 +410,21 @@ export const GraphView: React.FC<GraphViewProps> = ({
     <div
       ref={containerRef}
       className={`relative w-full h-full overflow-hidden bg-slate-950 select-none ${className}`}
+      style={{
+        backgroundColor: theme?.colors.bgPrimary || 'var(--color-bg-primary)',
+        color: theme?.colors.textPrimary || 'var(--color-text-primary)',
+      }}
     >
       {/* Loading state indicator */}
       {isLoading && (
-        <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-sm">
-          <Loader2 className="w-8 h-8 text-cyan-400 animate-spin mb-2" />
-          <p className="text-xs text-slate-300">Constructing interactive graph...</p>
+        <div
+          className="absolute inset-0 z-30 flex flex-col items-center justify-center backdrop-blur-sm"
+          style={{ backgroundColor: theme?.colors.bgPrimary ? `${theme.colors.bgPrimary}cc` : 'rgba(10, 10, 10, 0.8)' }}
+        >
+          <Loader2 className="w-8 h-8 animate-spin mb-2" style={{ color: theme?.colors.accent || 'var(--color-accent)' }} />
+          <p className="text-xs" style={{ color: theme?.colors.textSecondary || 'var(--color-text-secondary)' }}>
+            Constructing interactive graph...
+          </p>
         </div>
       )}
 
@@ -421,21 +448,35 @@ export const GraphView: React.FC<GraphViewProps> = ({
         onResetView={handleResetView}
         onResetFilters={resetFilters}
         stats={stats}
+        theme={theme}
       />
 
       {/* Empty vault state */}
       {!isLoading && rawGraph && rawGraph.nodes.length === 0 && (
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-slate-500 p-8">
-          <div className="w-14 h-14 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-cyan-400 mb-3">
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-8">
+          <div
+            className="w-14 h-14 rounded-2xl border flex items-center justify-center mb-3"
+            style={{
+              backgroundColor: theme?.colors.bgTertiary || 'var(--color-bg-tertiary)',
+              borderColor: theme?.colors.border || 'var(--color-border)',
+              color: theme?.colors.accent || 'var(--color-accent)',
+            }}
+          >
             <Network className="w-7 h-7" />
           </div>
-          <h3 className="text-base font-semibold text-slate-200 mb-1">Vault graph is empty</h3>
-          <p className="text-xs text-slate-400 text-center max-w-sm mb-4">
-            Create your first notes and connect them using <code className="text-cyan-300">[[wikilinks]]</code> to visualize your knowledge web.
+          <h3 className="text-base font-semibold mb-1" style={{ color: theme?.colors.textBold || 'var(--color-text-bold)' }}>
+            Vault graph is empty
+          </h3>
+          <p className="text-xs text-center max-w-sm mb-4" style={{ color: theme?.colors.textSecondary || 'var(--color-text-secondary)' }}>
+            Create your first notes and connect them using <code className="font-semibold underline">[[wikilinks]]</code> to visualize your knowledge web.
           </p>
           <button
             onClick={() => onCreateNote('Welcome')}
-            className="px-3.5 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-medium transition"
+            className="px-3.5 py-1.5 rounded-lg text-xs font-medium transition hover:opacity-90 shadow-xs"
+            style={{
+              backgroundColor: theme?.colors.accent || 'var(--color-accent)',
+              color: theme?.isDark ? '#000000' : '#ffffff',
+            }}
           >
             Create First Note
           </button>
@@ -444,17 +485,31 @@ export const GraphView: React.FC<GraphViewProps> = ({
 
       {/* Empty filter results state */}
       {!isLoading && rawGraph && rawGraph.nodes.length > 0 && filteredGraph.nodes.length === 0 && (
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-slate-400 p-8">
-          <div className="w-12 h-12 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-amber-400 mb-3">
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-8">
+          <div
+            className="w-12 h-12 rounded-xl border flex items-center justify-center mb-3"
+            style={{
+              backgroundColor: theme?.colors.bgTertiary || 'var(--color-bg-tertiary)',
+              borderColor: theme?.colors.border || 'var(--color-border)',
+              color: theme?.colors.accent || 'var(--color-accent)',
+            }}
+          >
             <RotateCcw className="w-6 h-6" />
           </div>
-          <h3 className="text-sm font-semibold text-slate-200 mb-1">No notes match current filters</h3>
-          <p className="text-xs text-slate-500 text-center max-w-xs mb-3">
+          <h3 className="text-sm font-semibold mb-1" style={{ color: theme?.colors.textBold || 'var(--color-text-bold)' }}>
+            No notes match current filters
+          </h3>
+          <p className="text-xs text-center max-w-xs mb-3" style={{ color: theme?.colors.textSecondary || 'var(--color-text-secondary)' }}>
             Try adjusting your search query, tag filters, or hop depth.
           </p>
           <button
             onClick={resetFilters}
-            className="px-3 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium transition"
+            className="px-3 py-1 rounded-md border text-xs font-medium transition hover:opacity-80"
+            style={{
+              backgroundColor: theme?.colors.bgTertiary || 'var(--color-bg-tertiary)',
+              borderColor: theme?.colors.border || 'var(--color-border)',
+              color: theme?.colors.textPrimary || 'var(--color-text-primary)',
+            }}
           >
             Reset Filters
           </button>
@@ -467,6 +522,7 @@ export const GraphView: React.FC<GraphViewProps> = ({
           ref={fgRef}
           width={dimensions.width}
           height={dimensions.height}
+          backgroundColor={theme?.colors.bgPrimary || (theme?.isDark ? '#0a0a0a' : '#ffffff')}
           graphData={filteredGraph}
           nodeId="id"
           nodeCanvasObject={(node, ctx, scale) => drawNodeCanvas(node as SimulationNode, ctx, scale)}

@@ -191,7 +191,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <button
               onClick={() => setIsPinnedOpen((prev) => !prev)}
               className="w-full px-2 py-1 text-[10px] font-semibold uppercase tracking-wider flex items-center justify-between rounded transition hover:opacity-80"
-              style={{ color: '#f59e0b' }}
+              style={{ color: theme?.colors.accent || 'var(--color-accent)' }}
             >
               <div className="flex items-center gap-1">
                 {isPinnedOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
@@ -289,7 +289,7 @@ const NoteListItem: React.FC<NoteListItemProps> = ({ note, isSelected, onSelect,
       <div className="flex items-center justify-between">
         <span className="text-xs font-medium truncate flex-1 pr-1">{note.title}</span>
         <div className="flex items-center gap-1 shrink-0">
-          {note.is_pinned && <Pin className="w-3 h-3 text-amber-400 fill-amber-400/20" />}
+          {note.is_pinned && <Pin className="w-3 h-3" style={{ color: theme?.colors.accent || 'var(--color-accent)' }} />}
           {onDelete && (
             <button
               onClick={(e) => {
@@ -297,7 +297,7 @@ const NoteListItem: React.FC<NoteListItemProps> = ({ note, isSelected, onSelect,
                 onDelete();
               }}
               title="Delete note"
-              className="opacity-0 group-hover:opacity-100 p-0.5 hover:text-rose-400 transition"
+              className="opacity-0 group-hover:opacity-100 p-0.5 transition hover:opacity-80"
               style={{ color: theme?.colors.textSecondary || 'var(--color-text-secondary)' }}
             >
               <Trash2 className="w-3 h-3" />
