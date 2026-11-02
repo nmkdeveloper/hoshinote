@@ -21,11 +21,18 @@ impl AppState {
     }
 
     pub fn open_or_create(path: &Path) -> Result<Self, rusqlite::Error> {
+        let key_path = path.with_extension("key");
+        let enc_path = path.with_extension("db.enc");
+
+        // Restore from encrypted snapshot if plaintext database is missing
+        if !path.exists() && enc_path.exists() && key_path.exists() {
+            let _ = crate::db::crypto::decrypt_database_file(&enc_path, &key_path, path);
+        }
+
         let conn = Connection::open(path)?;
         configure_connection(&conn)?;
         run_migrations(&conn)?;
 
-        let key_path = path.with_extension("key");
         let _ = get_or_create_vault_key(&key_path);
 
         let state = Self {

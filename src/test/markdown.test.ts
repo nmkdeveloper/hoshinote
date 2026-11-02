@@ -192,11 +192,13 @@ describe('GFM Markdown Rendering & XSS Sanitization', () => {
     expect(html).toContain('Quantum</a>');
   });
 
-  it('renders fenced code blocks with language syntax class', () => {
+  it('renders fenced code blocks with language syntax class and tokens', () => {
     const md = '```typescript\nconst x: number = 42;\n```';
     const html = renderMarkdown(md);
     expect(html).toContain('<pre><code class="language-typescript">');
-    expect(html).toContain('const x: number = 42;');
+    expect(html).toContain('class="token-keyword">const</span>');
+    expect(html).toContain('class="token-type">number</span>');
+    expect(html).toContain('class="token-number">42</span>');
   });
 
   it('strips malicious script tags and inline event handlers (XSS protection)', () => {

@@ -31,8 +31,13 @@ const BOOLEANS_AND_CONSTS = new Set([
 /**
  * Highlights a block of code with HTML syntax spans.
  */
-export function highlightCode(code: string, _lang?: string): string {
+export function highlightCode(code: string, lang?: string): string {
   if (!code) return '';
+
+  const normalizedLang = lang ? lang.trim().toLowerCase() : '';
+  if (normalizedLang === 'text' || normalizedLang === 'plain' || normalizedLang === 'txt') {
+    return escapeHtml(code);
+  }
 
   const lines = code.split('\n');
   const highlightedLines = lines.map((line) => {

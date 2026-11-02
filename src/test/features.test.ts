@@ -81,10 +81,22 @@ describe('Image and Code Block Rendering', () => {
     expect(html).toContain('<h3>Title 3</h3>');
   });
 
-  it('renders bold text with strong tags', () => {
-    const md = 'This is **extra bold** text';
+  it('renders bold text with strong tags for both asterisks and underscores', () => {
+    const md1 = 'This is **extra bold** text';
+    const html1 = renderMarkdown(md1);
+    expect(html1).toContain('<strong>extra bold</strong>');
+
+    const md2 = 'This is __underscore bold__ text';
+    const html2 = renderMarkdown(md2);
+    expect(html2).toContain('<strong>underscore bold</strong>');
+  });
+
+  it('renders syntax highlighting tokens in fenced code blocks', () => {
+    const md = '```javascript\nconst count = 10; // active count\n```';
     const html = renderMarkdown(md);
-    expect(html).toContain('<strong>extra bold</strong>');
+    expect(html).toContain('class="token-keyword">const</span>');
+    expect(html).toContain('class="token-number">10</span>');
+    expect(html).toContain('class="token-comment">// active count</span>');
   });
 });
 

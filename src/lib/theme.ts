@@ -194,3 +194,16 @@ export async function loadThemeFromFile(file: File): Promise<ThemeConfig> {
 
   return validTheme;
 }
+
+/**
+ * Retrieves list of user-imported custom themes from localStorage
+ */
+export function getCustomThemes(): ThemeConfig[] {
+  if (typeof localStorage === 'undefined') return [];
+  try {
+    const rawList = localStorage.getItem(CUSTOM_THEMES_STORAGE_KEY);
+    return rawList ? JSON.parse(rawList) : [];
+  } catch {
+    return [];
+  }
+}

@@ -18,6 +18,7 @@
 
 import { renderMathToSvg, escapeHtml } from './math';
 import { renderWikilinksToHtml } from './remark-wikilink';
+import { highlightCode } from './syntax';
 
 export interface MarkdownOptions {
   existingTitles?: string[];
@@ -207,7 +208,9 @@ function transformMarkdownInner(input: string, existingTitles?: string[]): strin
 
   // 7. Bold, Italic, Strikethrough
   html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/(^|[^a-zA-Z0-9_])__([^_]+)__(?![a-zA-Z0-9_])/g, '$1<strong>$2</strong>');
   html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+  html = html.replace(/(^|[^a-zA-Z0-9_])_([^_]+)_(?![a-zA-Z0-9_])/g, '$1<em>$2</em>');
   html = html.replace(/~~([^~]+)~~/g, '<del>$1</del>');
 
   // 8. Unordered Lists (- or *)
@@ -225,9 +228,10 @@ export function renderMarkdown(markdown: string | null | undefined, existingTitl
 
   const tokens: string[] = [];
 
-  // Phase 1: Shield Fenced Code Blocks (```lang\ncode\n```) with header, language badge, and copy button
+  // Phase 1: Shield Fenced Code Blocks (```lang\ncode\n```) with header, language badge, copy button, and syntax highlighting
   let text = markdown.replace(/```([a-zA-Z0-9_-]*)\r?\n([\s\S]*?)```/gm, (_match, lang, code) => {
-    const safeCode = escapeHtml(code.trim());
+    const rawTrimmed = code.trim();
+    const safeCode = highlightCode(rawTrimmed, lang);
     const displayLang = lang ? lang.toUpperCase() : 'TEXT';
     const langClass = lang ? ` class="language-${lang}"` : '';
     const rendered = `<div class="codeblock-wrapper"><div class="codeblock-header"><span class="codeblock-lang">${displayLang}</span><button class="codeblock-copy-btn" type="button" aria-label="Copy code">Copy</button></div><pre><code${langClass}>${safeCode}</code></pre></div>`;

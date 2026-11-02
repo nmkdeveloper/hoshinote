@@ -50,13 +50,10 @@ pub fn encrypt_bytes(key: &[u8; KEY_SIZE], plaintext: &[u8]) -> Result<Vec<u8>, 
     let cipher_key = Key::<Aes256Gcm>::from_slice(key);
     let cipher = Aes256Gcm::new(cipher_key);
 
-    // Deterministic unique nonce based on payload length and header
+    // Generate cryptographically secure 96-bit random nonce
+    let random_uuid = uuid::Uuid::new_v4();
     let mut nonce_bytes = [0u8; NONCE_SIZE];
-    let len_bytes = (plaintext.len() as u64).to_le_bytes();
-    for (i, b) in nonce_bytes.iter_mut().enumerate() {
-        let l = if i < 8 { len_bytes[i] } else { 0x5a };
-        *b = key[i % KEY_SIZE] ^ l ^ ((i as u8) * 17);
-    }
+    nonce_bytes.copy_from_slice(&random_uuid.as_bytes()[..NONCE_SIZE]);
     let nonce = Nonce::from_slice(&nonce_bytes);
 
     let ciphertext = cipher

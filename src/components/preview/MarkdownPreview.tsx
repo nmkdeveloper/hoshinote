@@ -99,10 +99,14 @@ export const MarkdownPreview = forwardRef<MarkdownPreviewHandle, MarkdownPreview
         ref={containerRef}
         onScroll={handleScroll}
         onClick={handleClick}
-        className={`h-full w-full overflow-y-auto px-8 py-6 text-slate-200 select-text font-sans leading-relaxed ${className}`}
+        className={`h-full w-full overflow-y-auto px-8 py-6 select-text font-sans leading-relaxed ${className}`}
+        style={{
+          color: 'var(--color-text-primary)',
+          backgroundColor: 'var(--color-bg-editor)',
+        }}
       >
         <div
-          className="markdown-preview prose prose-invert max-w-none prose-headings:text-slate-100 prose-headings:font-bold prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg prose-p:my-2 prose-blockquote:border-l-4 prose-blockquote:border-cyan-500/60 prose-blockquote:pl-4 prose-blockquote:text-slate-400 prose-blockquote:italic prose-pre:bg-slate-950 prose-pre:border prose-pre:border-slate-800 prose-pre:p-3 prose-pre:rounded-lg prose-code:text-cyan-300 prose-code:font-mono prose-table:border-collapse prose-th:border prose-th:border-slate-800 prose-th:px-3 prose-th:py-1.5 prose-th:bg-slate-900 prose-td:border prose-td:border-slate-800 prose-td:px-3 prose-td:py-1.5 prose-a:text-cyan-400 prose-a:no-underline hover:prose-a:underline"
+          className="markdown-preview max-w-none"
           dangerouslySetInnerHTML={{ __html: renderedHtml }}
         />
       </div>

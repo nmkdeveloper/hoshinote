@@ -386,6 +386,7 @@ export function App() {
             onNewNote={() => handleCreateNote()}
             selectedTag={selectedTag}
             onSelectTag={setSelectedTag}
+            theme={currentTheme}
           />
         )}
 
@@ -399,7 +400,7 @@ export function App() {
               <div className="flex-1 flex flex-col h-full overflow-hidden">
                 {/* Note Editor Header Bar */}
                 <div
-                  className="h-10 px-4 border-b flex items-center justify-between shrink-0"
+                  className="h-9 px-4 border-b flex items-center justify-between shrink-0"
                   style={{
                     backgroundColor: currentTheme.colors.bgSecondary,
                     borderColor: currentTheme.colors.border,
@@ -420,7 +421,7 @@ export function App() {
                     />
                   </div>
                   <div
-                    className="text-[11px] font-mono shrink-0"
+                    className="text-[11px] font-mono shrink-0 opacity-70"
                     style={{ color: currentTheme.colors.textSecondary }}
                   >
                     {activeNoteDetails.note.path}
@@ -434,6 +435,7 @@ export function App() {
                   onInsertFormat={handleInsertFormat}
                   onUploadImage={handleUploadImage}
                   onExportZip={handleExportZip}
+                  theme={currentTheme}
                 />
 
                 {/* Split / Single View Workspace */}
@@ -482,7 +484,7 @@ export function App() {
                 {/* Wiki.js style Integrated Graph Dock (merged into active note view) */}
                 {isGraphDockOpen && (
                   <div
-                    className="h-64 border-t flex flex-col shrink-0 relative"
+                    className="h-56 border-t flex flex-col shrink-0 relative transition-all duration-150"
                     style={{
                       borderColor: currentTheme.colors.border,
                       backgroundColor: currentTheme.colors.bgPrimary,
@@ -508,6 +510,7 @@ export function App() {
                           onClick={() => handleViewChange('graph')}
                           className="hover:underline transition text-[10px]"
                           style={{ color: currentTheme.colors.accent }}
+                          title="Maximize to Full Canvas"
                         >
                           Maximize Full Canvas
                         </button>
@@ -532,12 +535,16 @@ export function App() {
                 )}
               </div>
             ) : (
-              <div className="flex-1 flex flex-col items-center justify-center p-8 text-slate-500">
-                <BookOpen className="w-12 h-12 mb-3 text-slate-700" />
+              <div
+                className="flex-1 flex flex-col items-center justify-center p-8 text-center"
+                style={{ color: currentTheme.colors.textSecondary }}
+              >
+                <BookOpen className="w-12 h-12 mb-3 opacity-30" />
                 <p className="text-sm font-medium mb-2">No note selected</p>
                 <button
                   onClick={() => handleCreateNote()}
-                  className="px-3 py-1.5 rounded-md bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-medium transition"
+                  className="px-3 py-1.5 rounded-md text-white text-xs font-medium transition hover:opacity-90 shadow-xs"
+                  style={{ backgroundColor: currentTheme.colors.accent }}
                 >
                   Create New Note
                 </button>
@@ -545,13 +552,35 @@ export function App() {
             )
           ) : (
             /* Full Interactive Graph View Mode */
-            <div className="flex-1 w-full h-full relative overflow-hidden">
-              <GraphView
-                selectedNoteId={selectedNoteId}
-                onSelectNote={(noteId) => setSelectedNoteId(noteId)}
-                onOpenNote={(noteId) => handleSelectNote(noteId)}
-                onCreateNote={(title) => handleCreateNote(title)}
-              />
+            <div className="flex-1 w-full h-full relative overflow-hidden flex flex-col">
+              <div
+                className="h-7 px-3 border-b flex items-center justify-between text-[11px] select-none shrink-0"
+                style={{
+                  backgroundColor: currentTheme.colors.bgSecondary,
+                  borderColor: currentTheme.colors.border,
+                  color: currentTheme.colors.textSecondary,
+                }}
+              >
+                <div className="flex items-center space-x-1.5 font-semibold" style={{ color: currentTheme.colors.accent }}>
+                  <Network className="w-3.5 h-3.5" />
+                  <span>Interactive Knowledge Graph</span>
+                </div>
+                <button
+                  onClick={() => handleViewChange('editor')}
+                  className="hover:underline transition text-[10px]"
+                  style={{ color: currentTheme.colors.accent }}
+                >
+                  Return to Note Editor
+                </button>
+              </div>
+              <div className="flex-1 relative overflow-hidden">
+                <GraphView
+                  selectedNoteId={selectedNoteId}
+                  onSelectNote={(noteId) => setSelectedNoteId(noteId)}
+                  onOpenNote={(noteId) => handleSelectNote(noteId)}
+                  onCreateNote={(title) => handleCreateNote(title)}
+                />
+              </div>
             </div>
           )}
         </main>
@@ -565,6 +594,7 @@ export function App() {
             onTogglePin={handleTogglePin}
             onToggleArchive={handleToggleArchive}
             onExportZip={handleExportZip}
+            theme={currentTheme}
           />
         )}
       </div>
@@ -578,6 +608,7 @@ export function App() {
         charCount={charCount}
         currentNoteTitle={editorTitle}
         isEncrypted={true}
+        theme={currentTheme}
       />
 
       {/* Quick Switcher Modal (Ctrl+P / Ctrl+O) */}

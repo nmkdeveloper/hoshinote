@@ -1,5 +1,7 @@
 import { EditorView } from '@codemirror/view';
 import { Extension } from '@codemirror/state';
+import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
+import { tags } from '@lezer/highlight';
 import type { ThemeConfig } from '../../types/theme';
 
 export function createEditorTheme(theme?: ThemeConfig): Extension {
@@ -16,7 +18,7 @@ export function createEditorTheme(theme?: ThemeConfig): Extension {
     codeText: '#7dd3fc',
   };
 
-  return EditorView.theme(
+  const themeView = EditorView.theme(
     {
       '&': {
         color: colors.textPrimary,
@@ -85,34 +87,31 @@ export function createEditorTheme(theme?: ThemeConfig): Extension {
         backgroundColor: colors.bgEditor,
         color: colors.textPrimary,
       },
-      // Heading styling inside CodeMirror
-      '.cm-header-1, .cm-formatting-header-1': {
-        fontSize: '1.4em',
-        fontWeight: '700',
-        color: `${colors.accent} !important`,
-      },
-      '.cm-header-2, .cm-formatting-header-2': {
-        fontSize: '1.22em',
-        fontWeight: '700',
-        color: `${colors.accent} !important`,
-      },
-      '.cm-header-3, .cm-formatting-header-3': {
-        fontSize: '1.1em',
-        fontWeight: '600',
-        color: `${colors.textBold} !important`,
-      },
-      // Bold syntax inside CodeMirror
-      '.cm-strong, .cm-formatting-strong': {
-        fontWeight: '750 !important',
-        color: `${colors.textBold} !important`,
-      },
-      '.cm-link, .cm-url': {
-        color: colors.accent,
-        textDecoration: 'underline',
-      },
     },
     { dark: isDark }
   );
+
+  const themeHighlight = syntaxHighlighting(
+    HighlightStyle.define([
+      { tag: tags.heading1, fontSize: '1.65em', fontWeight: '750', color: colors.accent },
+      { tag: tags.heading2, fontSize: '1.38em', fontWeight: '700', color: colors.accent },
+      { tag: tags.heading3, fontSize: '1.2em', fontWeight: '650', color: colors.textBold },
+      { tag: tags.heading4, fontSize: '1.08em', fontWeight: '600', color: colors.textBold },
+      { tag: tags.heading5, fontSize: '0.98em', fontWeight: '600', color: colors.textBold },
+      { tag: tags.heading6, fontSize: '0.9em', fontWeight: '600', color: colors.textSecondary },
+      { tag: tags.strong, fontWeight: '750', color: colors.textBold },
+      { tag: tags.emphasis, fontStyle: 'italic' },
+      { tag: tags.keyword, color: colors.accent },
+      { tag: tags.string, color: colors.codeText },
+      { tag: tags.number, color: '#f59e0b' },
+      { tag: tags.comment, color: colors.textSecondary, fontStyle: 'italic' },
+      { tag: tags.link, color: colors.accent, textDecoration: 'underline' },
+      { tag: tags.url, color: colors.accent },
+      { tag: tags.monospace, color: colors.codeText, backgroundColor: colors.codeBg },
+    ])
+  );
+
+  return [themeView, themeHighlight];
 }
 
 export const hoshinoteDarkTheme: Extension = createEditorTheme();
