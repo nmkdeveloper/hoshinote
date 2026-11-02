@@ -168,7 +168,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         : theme?.colors.bgTertiary || 'var(--color-bg-tertiary)',
                       borderColor: theme?.colors.border || 'var(--color-border)',
                       color: isSelected
-                        ? '#ffffff'
+                        ? (theme?.isDark ? '#000000' : '#ffffff')
                         : theme?.colors.textPrimary || 'var(--color-text-primary)',
                     }}
                   >

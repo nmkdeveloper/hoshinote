@@ -17,7 +17,19 @@ describe('Themes & Appearance (Dark, Light, Cute)', () => {
     expect(BUILTIN_THEMES.cute.colors.accent).toBe('#ec4899');
     expect(BUILTIN_THEMES.cute.colors.bgPrimary).toBe('#faf5f8');
     expect(BUILTIN_THEMES.cute.colors.border).toBe('#f5d0e3');
-    expect(BUILTIN_THEMES.dark.colors.accent).toBe('#38bdf8');
+
+    // Monochrome Dark
+    expect(BUILTIN_THEMES.dark.colors.accent).toBe('#e5e5e5');
+    expect(BUILTIN_THEMES.dark.colors.bgPrimary).toBe('#0a0a0a');
+    expect(BUILTIN_THEMES.dark.colors.bgSecondary).toBe('#121212');
+    expect(BUILTIN_THEMES.dark.colors.border).toBe('#2e2e2e');
+    expect(BUILTIN_THEMES.dark.colors.textPrimary).toBe('#ffffff');
+
+    // Monochrome Light
+    expect(BUILTIN_THEMES.light.colors.accent).toBe('#171717');
+    expect(BUILTIN_THEMES.light.colors.bgPrimary).toBe('#ffffff');
+    expect(BUILTIN_THEMES.light.colors.border).toBe('#d0d0d0');
+    expect(BUILTIN_THEMES.light.colors.textPrimary).toBe('#000000');
   });
 
   it('applies theme variables when document is present', () => {
@@ -47,9 +59,16 @@ describe('Themes & Appearance (Dark, Light, Cute)', () => {
       expect(classList.has('dark')).toBe(false);
 
       applyTheme(BUILTIN_THEMES.dark);
-      expect(properties.get('--color-accent')).toBe('#38bdf8');
+      expect(properties.get('--color-accent')).toBe('#e5e5e5');
+      expect(properties.get('--color-bg-primary')).toBe('#0a0a0a');
       expect(classList.has('dark')).toBe(true);
       expect(classList.has('light')).toBe(false);
+
+      applyTheme(BUILTIN_THEMES.light);
+      expect(properties.get('--color-accent')).toBe('#171717');
+      expect(properties.get('--color-bg-primary')).toBe('#ffffff');
+      expect(classList.has('dark')).toBe(false);
+      expect(classList.has('light')).toBe(true);
     } finally {
       delete (globalThis as any).document;
     }

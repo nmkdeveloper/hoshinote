@@ -7,15 +7,15 @@ import type { ThemeConfig } from '../../types/theme';
 export function createEditorTheme(theme?: ThemeConfig): Extension {
   const isDark = theme ? theme.isDark : true;
   const colors = theme?.colors || {
-    bgEditor: '#090d16',
-    border: '#1e293b',
-    textPrimary: '#f1f5f9',
-    textSecondary: '#94a3b8',
+    bgEditor: '#0a0a0a',
+    border: '#2e2e2e',
+    textPrimary: '#ffffff',
+    textSecondary: '#888888',
     textBold: '#ffffff',
-    accent: '#38bdf8',
-    accentHover: '#0ea5e9',
-    codeBg: '#050811',
-    codeText: '#7dd3fc',
+    accent: '#e5e5e5',
+    accentHover: '#ffffff',
+    codeBg: '#171717',
+    codeText: '#cccccc',
   };
 
   const themeView = EditorView.theme(
@@ -103,7 +103,7 @@ export function createEditorTheme(theme?: ThemeConfig): Extension {
       { tag: tags.emphasis, fontStyle: 'italic' },
       { tag: tags.keyword, color: colors.accent },
       { tag: tags.string, color: colors.codeText },
-      { tag: tags.number, color: '#f59e0b' },
+      { tag: tags.number, color: colors.codeText },
       { tag: tags.comment, color: colors.textSecondary, fontStyle: 'italic' },
       { tag: tags.link, color: colors.accent, textDecoration: 'underline' },
       { tag: tags.url, color: colors.accent },

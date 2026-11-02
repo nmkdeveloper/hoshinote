@@ -543,8 +543,11 @@ export function App() {
                 <p className="text-sm font-medium mb-2">No note selected</p>
                 <button
                   onClick={() => handleCreateNote()}
-                  className="px-3 py-1.5 rounded-md text-white text-xs font-medium transition hover:opacity-90 shadow-xs"
-                  style={{ backgroundColor: currentTheme.colors.accent }}
+                  className="px-3 py-1.5 rounded-md text-xs font-medium transition hover:opacity-90 shadow-xs"
+                  style={{
+                    backgroundColor: currentTheme.colors.accent,
+                    color: currentTheme.isDark ? '#000000' : '#ffffff',
+                  }}
                 >
                   Create New Note
                 </button>

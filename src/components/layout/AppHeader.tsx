@@ -106,7 +106,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             className="w-5.5 h-5.5 rounded-md flex items-center justify-center shadow-xs"
             style={{
               backgroundColor: currentTheme.colors.accent,
-              color: currentTheme.isDark ? '#020617' : '#ffffff',
+              color: currentTheme.isDark ? '#000000' : '#ffffff',
             }}
           >
             <Sparkles className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -303,8 +303,11 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         {/* New Note Button */}
         <button
           onClick={onNewNote}
-          className="flex items-center space-x-1 px-2.5 py-1 rounded text-white text-xs font-medium transition shadow-xs hover:opacity-90"
-          style={{ backgroundColor: currentTheme.colors.accent }}
+          className="flex items-center space-x-1 px-2.5 py-1 rounded text-xs font-medium transition shadow-xs hover:opacity-90"
+          style={{
+            backgroundColor: currentTheme.colors.accent,
+            color: currentTheme.isDark ? '#000000' : '#ffffff',
+          }}
         >
           <Plus className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">New Note</span>
