@@ -3,11 +3,14 @@ import CodeMirror, { ReactCodeMirrorRef } from '@uiw/react-codemirror';
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 import { languages } from '@codemirror/language-data';
 import { EditorView } from '@codemirror/view';
-import { hoshinoteDarkTheme } from './theme';
+import { createEditorTheme } from './theme';
+import type { ThemeConfig } from '../../types/theme';
 
 export interface NoteEditorHandle {
   scrollToRatio: (ratio: number) => void;
   insertFormat: (prefix: string, suffix?: string, defaultText?: string) => void;
+  insertImage: (file: File) => Promise<void>;
+  insertText: (text: string) => void;
   focus: () => void;
 }
 
@@ -17,12 +20,27 @@ export interface NoteEditorProps {
   onScroll?: (ratio: number) => void;
   placeholder?: string;
   className?: string;
+  theme?: ThemeConfig;
 }
 
 export const NoteEditor = forwardRef<NoteEditorHandle, NoteEditorProps>(
-  ({ value, onChange, onScroll, placeholder = 'Start writing markdown with [[wikilinks]] and $math$...', className = '' }, ref) => {
+  (
+    {
+      value,
+      onChange,
+      onScroll,
+      placeholder = 'Start writing markdown with [[wikilinks]] and $math$...',
+      className = '',
+      theme,
+    },
+    ref
+  ) => {
     const cmRef = useRef<ReactCodeMirrorRef>(null);
     const isProgrammaticScrollRef = useRef(false);
+
+    const editorThemeExtension = useMemo(() => {
+      return createEditorTheme(theme);
+    }, [theme]);
 
     const extensions = useMemo(() => {
       return [
@@ -32,9 +50,9 @@ export const NoteEditor = forwardRef<NoteEditorHandle, NoteEditorProps>(
           addKeymap: true,
         }),
         EditorView.lineWrapping,
-        hoshinoteDarkTheme,
+        editorThemeExtension,
       ];
-    }, []);
+    }, [editorThemeExtension]);
 
     // Scroll listener on CodeMirror scrollDOM
     const handleScroll = useCallback(() => {
@@ -52,6 +70,92 @@ export const NoteEditor = forwardRef<NoteEditorHandle, NoteEditorProps>(
         onScroll(ratio);
       }
     }, [onScroll]);
+
+    // Insert text at current cursor
+    const handleInsertText = useCallback((textToInsert: string) => {
+      const view = cmRef.current?.view;
+      if (!view) return;
+
+      const selection = view.state.selection.main;
+      view.dispatch({
+        changes: {
+          from: selection.from,
+          to: selection.to,
+          insert: textToInsert,
+        },
+        selection: {
+          anchor: selection.from + textToInsert.length,
+          head: selection.from + textToInsert.length,
+        },
+      });
+      view.focus();
+    }, []);
+
+    // Insert image as markdown
+    const handleInsertImage = useCallback(
+      async (file: File) => {
+        return new Promise<void>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const dataUrl = e.target?.result as string;
+            if (dataUrl) {
+              const cleanName = file.name.replace(/[[\]]/g, '');
+              const markdownImg = `\n![${cleanName}](${dataUrl})\n`;
+              handleInsertText(markdownImg);
+              resolve();
+            } else {
+              reject(new Error('Failed to read image data'));
+            }
+          };
+          reader.onerror = () => reject(reader.error);
+          reader.readAsDataURL(file);
+        });
+      },
+      [handleInsertText]
+    );
+
+    // Paste handler for clipboard images
+    const handlePaste = useCallback(
+      (e: React.ClipboardEvent) => {
+        const items = e.clipboardData?.items;
+        if (!items) return;
+
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i];
+          if (item.type.startsWith('image/')) {
+            const file = item.getAsFile();
+            if (file) {
+              e.preventDefault();
+              handleInsertImage(file).catch((err) => {
+                console.error('Failed to paste image:', err);
+              });
+              break;
+            }
+          }
+        }
+      },
+      [handleInsertImage]
+    );
+
+    // Drop handler for dragging images into the editor
+    const handleDrop = useCallback(
+      (e: React.DragEvent) => {
+        const files = e.dataTransfer?.files;
+        if (!files || files.length === 0) return;
+
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          if (file.type.startsWith('image/')) {
+            e.preventDefault();
+            handleInsertImage(file).catch((err) => {
+              console.error('Failed to drop image:', err);
+            });
+            break;
+          }
+        }
+      },
+      [handleInsertImage]
+    );
 
     // Expose imperative handle methods
     useImperativeHandle(
@@ -88,17 +192,23 @@ export const NoteEditor = forwardRef<NoteEditorHandle, NoteEditorProps>(
           });
           view.focus();
         },
+        insertImage: handleInsertImage,
+        insertText: handleInsertText,
         focus: () => {
           cmRef.current?.view?.focus();
         },
       }),
-      []
+      [handleInsertImage, handleInsertText]
     );
 
     return (
       <div
-        className={`h-full w-full overflow-hidden flex flex-col bg-[#090d16] ${className}`}
+        className={`h-full w-full overflow-hidden flex flex-col ${className}`}
+        style={{ backgroundColor: theme?.colors.bgEditor || 'var(--color-bg-editor)' }}
         onScrollCapture={handleScroll}
+        onPaste={handlePaste}
+        onDrop={handleDrop}
+        onDragOver={(e) => e.preventDefault()}
       >
         <CodeMirror
           ref={cmRef}

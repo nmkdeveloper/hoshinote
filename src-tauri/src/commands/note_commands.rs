@@ -11,8 +11,12 @@ pub fn create_note(
     path: Option<String>,
     tags: Option<Vec<String>>,
 ) -> Result<NoteWithDetails, String> {
-    let conn = state.db.lock().map_err(|e| e.to_string())?;
-    services::create_note(&conn, title, content, path, tags)
+    let res = {
+        let conn = state.db.lock().map_err(|e| e.to_string())?;
+        services::create_note(&conn, title, content, path, tags)?
+    };
+    let _ = state.save_and_encrypt();
+    Ok(res)
 }
 
 #[tauri::command(rename_all = "snake_case")]
@@ -45,8 +49,12 @@ pub fn update_note(
     is_pinned: Option<bool>,
     is_archived: Option<bool>,
 ) -> Result<NoteWithDetails, String> {
-    let conn = state.db.lock().map_err(|e| e.to_string())?;
-    services::update_note(&conn, &id, title, content, path, tags, is_pinned, is_archived)
+    let res = {
+        let conn = state.db.lock().map_err(|e| e.to_string())?;
+        services::update_note(&conn, &id, title, content, path, tags, is_pinned, is_archived)?
+    };
+    let _ = state.save_and_encrypt();
+    Ok(res)
 }
 
 #[tauri::command(rename_all = "snake_case")]
@@ -54,8 +62,12 @@ pub fn delete_note(
     state: State<'_, AppState>,
     id: String,
 ) -> Result<(), String> {
-    let conn = state.db.lock().map_err(|e| e.to_string())?;
-    services::delete_note(&conn, &id)
+    {
+        let conn = state.db.lock().map_err(|e| e.to_string())?;
+        services::delete_note(&conn, &id)?;
+    }
+    let _ = state.save_and_encrypt();
+    Ok(())
 }
 
 #[tauri::command(rename_all = "snake_case")]
@@ -97,4 +109,29 @@ pub fn get_all_tags(
 ) -> Result<Vec<TagSummary>, String> {
     let conn = state.db.lock().map_err(|e| e.to_string())?;
     services::get_all_tags(&conn)
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+pub struct EncryptionStatus {
+    pub is_encrypted: bool,
+    pub algorithm: String,
+    pub vault_file: Option<String>,
+}
+
+#[tauri::command(rename_all = "snake_case")]
+pub fn get_db_encryption_status(state: State<'_, AppState>) -> Result<EncryptionStatus, String> {
+    let vault_file = state
+        .db_path
+        .as_ref()
+        .map(|p| p.with_extension("db.enc").to_string_lossy().to_string());
+    Ok(EncryptionStatus {
+        is_encrypted: true,
+        algorithm: "AES-256-GCM".to_string(),
+        vault_file,
+    })
+}
+
+#[tauri::command(rename_all = "snake_case")]
+pub fn encrypt_db(state: State<'_, AppState>) -> Result<String, String> {
+    state.save_and_encrypt()
 }

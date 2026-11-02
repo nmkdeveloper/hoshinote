@@ -40,6 +40,8 @@ pub fn run() {
             commands::get_backlinks,
             commands::get_graph_data,
             commands::get_all_tags,
+            commands::get_db_encryption_status,
+            commands::encrypt_db,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -137,7 +137,7 @@ async function main() {
     console.log(`      ✓ View 2 captured: ${pathView2}`);
 
     // --- VIEW 3: Interactive Graph Drawer ---
-    const graphBtn = page.locator('button:has-text("Graph")');
+    const graphBtn = page.locator('button[data-view="graph"], button[title="Full Interactive Graph Canvas"]').first();
     await graphBtn.click();
 
     await page.waitForSelector('canvas', { timeout: 15000 });

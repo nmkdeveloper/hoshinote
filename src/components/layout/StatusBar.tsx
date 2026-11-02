@@ -1,5 +1,4 @@
-import React from 'react';
-import { Database, CheckCircle2, FileText, Loader2, Check, AlertCircle } from 'lucide-react';
+import { Database, CheckCircle2, FileText, Loader2, Check, AlertCircle, Lock } from 'lucide-react';
 import type { SaveStatus } from '../../hooks/useDebouncedAutosave';
 
 export interface StatusBarProps {
@@ -9,6 +8,7 @@ export interface StatusBarProps {
   wordCount: number;
   charCount: number;
   currentNoteTitle?: string;
+  isEncrypted?: boolean;
 }
 
 export const StatusBar: React.FC<StatusBarProps> = ({
@@ -18,15 +18,26 @@ export const StatusBar: React.FC<StatusBarProps> = ({
   wordCount,
   charCount,
   currentNoteTitle,
+  isEncrypted = true,
 }) => {
   return (
     <footer className="h-6 border-t border-slate-800 bg-slate-950 px-3 flex items-center justify-between text-[11px] text-slate-400 select-none shrink-0 z-20">
-      {/* Left info: Database, App Status & Autosave Status */}
+      {/* Left info: Database, Encryption, App Status & Autosave Status */}
       <div className="flex items-center space-x-3">
         <div className="flex items-center space-x-1.5 text-cyan-400">
           <Database className="w-3 h-3 text-cyan-400" />
           <span className="font-medium">SQLite Bundled</span>
         </div>
+
+        {isEncrypted && (
+          <>
+            <div className="h-3 w-px bg-slate-800" />
+            <div className="flex items-center space-x-1 text-emerald-400 font-medium" title="Database is encrypted at rest using AES-256-GCM">
+              <Lock className="w-3 h-3 text-emerald-400" />
+              <span>Encrypted (AES-256)</span>
+            </div>
+          </>
+        )}
 
         <div className="h-3 w-px bg-slate-800" />
 

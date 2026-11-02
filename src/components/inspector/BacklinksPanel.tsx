@@ -11,6 +11,7 @@ import {
   ArrowUpRight,
   PlusCircle,
   Hash,
+  Download,
 } from 'lucide-react';
 import type { NoteWithDetails } from '../../types';
 
@@ -20,6 +21,7 @@ export interface BacklinksPanelProps {
   onCreateNoteFromLink?: (title: string) => void;
   onTogglePin?: (isPinned: boolean) => void;
   onToggleArchive?: (isArchived: boolean) => void;
+  onExportZip?: () => void;
 }
 
 export const BacklinksPanel: React.FC<BacklinksPanelProps> = ({
@@ -28,6 +30,7 @@ export const BacklinksPanel: React.FC<BacklinksPanelProps> = ({
   onCreateNoteFromLink,
   onTogglePin,
   onToggleArchive,
+  onExportZip,
 }) => {
   if (!noteDetails) {
     return (
@@ -78,6 +81,15 @@ export const BacklinksPanel: React.FC<BacklinksPanelProps> = ({
                 }`}
               >
                 <Archive className="w-3.5 h-3.5" />
+              </button>
+            )}
+            {onExportZip && (
+              <button
+                onClick={onExportZip}
+                title="Export this note as a ZIP archive"
+                className="p-1 rounded text-slate-400 hover:text-cyan-300 transition"
+              >
+                <Download className="w-3.5 h-3.5" />
               </button>
             )}
           </div>

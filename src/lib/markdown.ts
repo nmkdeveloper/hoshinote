@@ -199,12 +199,18 @@ function transformMarkdownInner(input: string, existingTitles?: string[]): strin
   // 4. Wikilinks [[Target|Alias]]
   html = renderWikilinksToHtml(html, existingTitles);
 
-  // 5. Bold, Italic, Strikethrough
+  // 5. Images: ![alt](url)
+  html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" loading="lazy" />');
+
+  // 6. Standard Links: [text](url) (excluding images already converted)
+  html = html.replace(/(^|[^\\])\[([^\]]+)\]\(([^)]+)\)/g, '$1<a href="$3" target="_blank" rel="noopener noreferrer">$2</a>');
+
+  // 7. Bold, Italic, Strikethrough
   html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
   html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
   html = html.replace(/~~([^~]+)~~/g, '<del>$1</del>');
 
-  // 6. Unordered Lists (- or *)
+  // 8. Unordered Lists (- or *)
   html = html.replace(/^[*-]\s+(?!\[[ x]\])(.*)$/gim, '<li>$1</li>');
 
   return html;
@@ -219,11 +225,12 @@ export function renderMarkdown(markdown: string | null | undefined, existingTitl
 
   const tokens: string[] = [];
 
-  // Phase 1: Shield Fenced Code Blocks (```lang\ncode\n```)
+  // Phase 1: Shield Fenced Code Blocks (```lang\ncode\n```) with header, language badge, and copy button
   let text = markdown.replace(/```([a-zA-Z0-9_-]*)\r?\n([\s\S]*?)```/gm, (_match, lang, code) => {
     const safeCode = escapeHtml(code.trim());
+    const displayLang = lang ? lang.toUpperCase() : 'TEXT';
     const langClass = lang ? ` class="language-${lang}"` : '';
-    const rendered = `<pre><code${langClass}>${safeCode}</code></pre>`;
+    const rendered = `<div class="codeblock-wrapper"><div class="codeblock-header"><span class="codeblock-lang">${displayLang}</span><button class="codeblock-copy-btn" type="button" aria-label="Copy code">Copy</button></div><pre><code${langClass}>${safeCode}</code></pre></div>`;
     const idx = tokens.length;
     tokens.push(rendered);
     return `___HOSHINOTE_TOKEN_${idx}___`;

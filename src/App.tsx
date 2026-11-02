@@ -10,7 +10,10 @@ import { QuickSwitcherModal } from './components/search/QuickSwitcherModal';
 import { useDebouncedAutosave } from './hooks/useDebouncedAutosave';
 import * as api from './lib/api';
 import type { NoteSummary, NoteWithDetails } from './types';
-import { FileEdit, BookOpen } from 'lucide-react';
+import type { ThemeConfig } from './types/theme';
+import { getSavedTheme, applyTheme } from './lib/theme';
+import { exportNoteToZip } from './lib/export';
+import { FileEdit, BookOpen, Network, X } from 'lucide-react';
 import { GraphView } from './components/graph';
 
 export function App() {
@@ -22,7 +25,10 @@ export function App() {
   const [currentView, setCurrentView] = useState<'editor' | 'graph'>('editor');
   const [viewMode, setViewMode] = useState<ViewMode>('split');
   const [isQuickSwitcherOpen, setIsQuickSwitcherOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isInspectorOpen, setIsInspectorOpen] = useState(true);
+  const [isGraphDockOpen, setIsGraphDockOpen] = useState(true);
+  const [currentTheme, setCurrentTheme] = useState<ThemeConfig>(() => getSavedTheme());
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [appStatus, setAppStatus] = useState<string>('Initializing...');
 
@@ -38,6 +44,11 @@ export function App() {
 
   const editorTitleRef = useRef(editorTitle);
   editorTitleRef.current = editorTitle;
+
+  // Apply theme on mount and whenever changed
+  useEffect(() => {
+    applyTheme(currentTheme);
+  }, [currentTheme]);
 
   // Load notes list
   const loadNotesList = useCallback(async () => {
@@ -221,7 +232,6 @@ export function App() {
           setSelectedNoteId(found.note.id);
           if (currentView !== 'editor') setCurrentView('editor');
         } else {
-          // Unresolved link -> create note
           await handleCreateNote(targetTitle);
         }
       } catch (err) {
@@ -289,7 +299,25 @@ export function App() {
     editorRef.current?.insertFormat(prefix, suffix, defaultText);
   }, []);
 
-  // Global keyboard shortcuts: Ctrl+P / Ctrl+O / Ctrl+K (Quick Switcher), Ctrl+E (Split toggle), Ctrl+Shift+B (Inspector toggle)
+  // Image upload handler
+  const handleUploadImage = useCallback(async (file: File) => {
+    if (editorRef.current) {
+      await editorRef.current.insertImage(file);
+    }
+  }, []);
+
+  // Export note to ZIP
+  const handleExportZip = useCallback(async () => {
+    if (!activeNoteDetails) return;
+    await flushAutosave();
+    try {
+      await exportNoteToZip(activeNoteDetails);
+    } catch (err) {
+      console.error('Failed to export note as ZIP:', err);
+    }
+  }, [activeNoteDetails, flushAutosave]);
+
+  // Global keyboard shortcuts
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
       const isCmdOrCtrl = e.ctrlKey || e.metaKey;
@@ -300,9 +328,15 @@ export function App() {
       } else if (isCmdOrCtrl && (e.key === 'e' || e.key === 'E')) {
         e.preventDefault();
         setViewMode((prev) => (prev === 'split' ? 'preview' : prev === 'preview' ? 'editor' : 'split'));
+      } else if (isCmdOrCtrl && (e.key === 'b' || e.key === 'B') && !e.shiftKey) {
+        e.preventDefault();
+        setIsSidebarOpen((prev) => !prev);
       } else if (isCmdOrCtrl && e.shiftKey && (e.key === 'b' || e.key === 'B')) {
         e.preventDefault();
         setIsInspectorOpen((prev) => !prev);
+      } else if (isCmdOrCtrl && (e.key === 'g' || e.key === 'G')) {
+        e.preventDefault();
+        setIsGraphDockOpen((prev) => !prev);
       }
     };
 
@@ -317,58 +351,89 @@ export function App() {
   const charCount = editorContent.length;
 
   return (
-    <div className="flex flex-col h-screen w-screen overflow-hidden bg-slate-950 text-slate-100 font-sans">
+    <div
+      className="flex flex-col h-screen w-screen overflow-hidden font-sans transition-colors duration-150"
+      style={{
+        backgroundColor: currentTheme.colors.bgPrimary,
+        color: currentTheme.colors.textPrimary,
+      }}
+    >
       {/* Top Header */}
       <AppHeader
         currentView={currentView}
         onViewChange={handleViewChange}
         onNewNote={() => handleCreateNote()}
         onOpenQuickSwitcher={() => setIsQuickSwitcherOpen(true)}
+        isSidebarOpen={isSidebarOpen}
+        onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
         isInspectorOpen={isInspectorOpen}
         onToggleInspector={() => setIsInspectorOpen((prev) => !prev)}
+        isGraphDockOpen={isGraphDockOpen}
+        onToggleGraphDock={() => setIsGraphDockOpen((prev) => !prev)}
+        currentTheme={currentTheme}
+        onSelectTheme={setCurrentTheme}
       />
 
-      {/* Main Center Area: 3 Panes */}
+      {/* Main Center Area: Sidebar + Workspace + Inspector */}
       <div className="flex flex-1 min-h-0 overflow-hidden">
-        {/* Left Sidebar */}
-        <Sidebar
-          notes={notes}
-          selectedNoteId={selectedNoteId}
-          onSelectNote={handleSelectNote}
-          onDeleteNote={handleDeleteNote}
-          onNewNote={() => handleCreateNote()}
-          selectedTag={selectedTag}
-          onSelectTag={setSelectedTag}
-        />
+        {/* Left Sidebar (Collapsible) */}
+        {isSidebarOpen && (
+          <Sidebar
+            notes={notes}
+            selectedNoteId={selectedNoteId}
+            onSelectNote={handleSelectNote}
+            onDeleteNote={handleDeleteNote}
+            onNewNote={() => handleCreateNote()}
+            selectedTag={selectedTag}
+            onSelectTag={setSelectedTag}
+          />
+        )}
 
         {/* Center Workspace Area */}
-        <main className="flex-1 flex flex-col min-w-0 bg-slate-950 overflow-hidden">
+        <main
+          className="flex-1 flex flex-col min-w-0 overflow-hidden"
+          style={{ backgroundColor: currentTheme.colors.bgPrimary }}
+        >
           {currentView === 'editor' ? (
             activeNoteDetails ? (
               <div className="flex-1 flex flex-col h-full overflow-hidden">
                 {/* Note Editor Header Bar */}
-                <div className="h-10 px-4 border-b border-slate-800 bg-slate-900/60 flex items-center justify-between shrink-0">
+                <div
+                  className="h-10 px-4 border-b flex items-center justify-between shrink-0"
+                  style={{
+                    backgroundColor: currentTheme.colors.bgSecondary,
+                    borderColor: currentTheme.colors.border,
+                  }}
+                >
                   <div className="flex items-center space-x-2 flex-1 min-w-0 mr-4">
-                    <FileEdit className="w-4 h-4 text-cyan-400 shrink-0" />
+                    <FileEdit className="w-4 h-4 shrink-0" style={{ color: currentTheme.colors.accent }} />
                     <input
                       type="text"
                       value={editorTitle}
                       onChange={(e) => handleTitleChange(e.target.value)}
                       placeholder="Note Title..."
                       aria-label="Note title"
-                      className="bg-transparent border-none text-sm font-semibold text-slate-100 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 rounded px-1.5 py-0.5 truncate flex-1"
+                      className="bg-transparent border-none text-sm font-bold focus:outline-none focus:ring-1 rounded px-1.5 py-0.5 truncate flex-1"
+                      style={{
+                        color: currentTheme.colors.textBold,
+                      }}
                     />
                   </div>
-                  <div className="text-[11px] text-slate-500 font-mono shrink-0">
+                  <div
+                    className="text-[11px] font-mono shrink-0"
+                    style={{ color: currentTheme.colors.textSecondary }}
+                  >
                     {activeNoteDetails.note.path}
                   </div>
                 </div>
 
-                {/* Editor Toolbar */}
+                {/* Editor Toolbar with image upload and zip export */}
                 <EditorToolbar
                   viewMode={viewMode}
                   onViewModeChange={setViewMode}
                   onInsertFormat={handleInsertFormat}
+                  onUploadImage={handleUploadImage}
+                  onExportZip={handleExportZip}
                 />
 
                 {/* Split / Single View Workspace */}
@@ -377,14 +442,16 @@ export function App() {
                   {(viewMode === 'split' || viewMode === 'editor') && (
                     <div
                       className={`h-full overflow-hidden flex flex-col ${
-                        viewMode === 'split' ? 'w-1/2 border-r border-slate-800' : 'w-full'
+                        viewMode === 'split' ? 'w-1/2 border-r' : 'w-full'
                       }`}
+                      style={{ borderColor: currentTheme.colors.border }}
                     >
                       <NoteEditor
                         ref={editorRef}
                         value={editorContent}
                         onChange={handleContentChange}
                         onScroll={handleEditorScroll}
+                        theme={currentTheme}
                       />
                     </div>
                   )}
@@ -392,9 +459,14 @@ export function App() {
                   {/* Markdown + MathJax Vector SVG Preview Pane */}
                   {(viewMode === 'split' || viewMode === 'preview') && (
                     <div
-                      className={`h-full overflow-hidden flex flex-col bg-[#0b1120]/40 ${
+                      className={`h-full overflow-hidden flex flex-col ${
                         viewMode === 'split' ? 'w-1/2' : 'w-full'
                       }`}
+                      style={{
+                        backgroundColor: currentTheme.isDark
+                          ? 'rgba(11, 17, 32, 0.4)'
+                          : currentTheme.colors.bgEditor,
+                      }}
                     >
                       <MarkdownPreview
                         ref={previewRef}
@@ -406,9 +478,61 @@ export function App() {
                     </div>
                   )}
                 </div>
+
+                {/* Wiki.js style Integrated Graph Dock (merged into active note view) */}
+                {isGraphDockOpen && (
+                  <div
+                    className="h-64 border-t flex flex-col shrink-0 relative"
+                    style={{
+                      borderColor: currentTheme.colors.border,
+                      backgroundColor: currentTheme.colors.bgPrimary,
+                    }}
+                  >
+                    <div
+                      className="h-7 px-3 border-b flex items-center justify-between text-[11px] select-none"
+                      style={{
+                        backgroundColor: currentTheme.colors.bgSecondary,
+                        borderColor: currentTheme.colors.border,
+                        color: currentTheme.colors.textSecondary,
+                      }}
+                    >
+                      <div
+                        className="flex items-center space-x-1.5 font-semibold"
+                        style={{ color: currentTheme.colors.accent }}
+                      >
+                        <Network className="w-3.5 h-3.5" />
+                        <span>Integrated Knowledge Graph (Wiki.js Style)</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => handleViewChange('graph')}
+                          className="hover:underline transition text-[10px]"
+                          style={{ color: currentTheme.colors.accent }}
+                        >
+                          Maximize Full Canvas
+                        </button>
+                        <button
+                          onClick={() => setIsGraphDockOpen(false)}
+                          className="hover:opacity-75 transition text-[10px] p-0.5"
+                          title="Close Graph Dock (Ctrl+G)"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="flex-1 relative overflow-hidden">
+                      <GraphView
+                        selectedNoteId={selectedNoteId}
+                        onSelectNote={(noteId) => setSelectedNoteId(noteId)}
+                        onOpenNote={(noteId) => handleSelectNote(noteId)}
+                        onCreateNote={(title) => handleCreateNote(title)}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
-              <div className="flex-1 flex flex-col items-center justify-center text-slate-500 p-8">
+              <div className="flex-1 flex flex-col items-center justify-center p-8 text-slate-500">
                 <BookOpen className="w-12 h-12 mb-3 text-slate-700" />
                 <p className="text-sm font-medium mb-2">No note selected</p>
                 <button
@@ -420,7 +544,7 @@ export function App() {
               </div>
             )
           ) : (
-            /* Graph View Mode */
+            /* Full Interactive Graph View Mode */
             <div className="flex-1 w-full h-full relative overflow-hidden">
               <GraphView
                 selectedNoteId={selectedNoteId}
@@ -432,7 +556,7 @@ export function App() {
           )}
         </main>
 
-        {/* Right Inspector Panel */}
+        {/* Right Inspector Panel (Collapsible) */}
         {isInspectorOpen && (
           <BacklinksPanel
             noteDetails={activeNoteDetails}
@@ -440,6 +564,7 @@ export function App() {
             onCreateNoteFromLink={handleCreateNote}
             onTogglePin={handleTogglePin}
             onToggleArchive={handleToggleArchive}
+            onExportZip={handleExportZip}
           />
         )}
       </div>
@@ -452,6 +577,7 @@ export function App() {
         wordCount={wordCount}
         charCount={charCount}
         currentNoteTitle={editorTitle}
+        isEncrypted={true}
       />
 
       {/* Quick Switcher Modal (Ctrl+P / Ctrl+O) */}
