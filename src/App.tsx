@@ -527,7 +527,7 @@ export function App() {
       <UpdateModal
         isOpen={isUpdateModalOpen}
         onClose={() => setIsUpdateModalOpen(false)}
-        currentVersion="0.2.0"
+        currentVersion="0.3.0"
       />
     </div>
   );
