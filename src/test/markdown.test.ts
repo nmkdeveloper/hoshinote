@@ -201,6 +201,20 @@ describe('GFM Markdown Rendering & XSS Sanitization', () => {
     expect(html).toContain('class="token-number">42</span>');
   });
 
+  it('compiles ```graph code blocks to embedded graph containers', () => {
+    const md = '```graph\nA -> B: test connection\n```';
+    const html = renderMarkdown(md);
+    expect(html).toContain('class="hoshinote-embedded-graph"');
+    expect(html).toContain('data-graph-source="');
+  });
+
+  it('compiles ```mermaid code blocks to embedded mermaid containers', () => {
+    const md = '```mermaid\ngraph TD\nA-->B\n```';
+    const html = renderMarkdown(md);
+    expect(html).toContain('class="hoshinote-embedded-mermaid"');
+    expect(html).toContain('data-mermaid-source="');
+  });
+
   it('strips malicious script tags and inline event handlers (XSS protection)', () => {
     const dangerous = 'Normal text <script>alert("hack")</script><img src="x" onerror="alert(1)" />';
     const html = renderMarkdown(dangerous);

@@ -231,6 +231,24 @@ export function renderMarkdown(markdown: string | null | undefined, existingTitl
   // Phase 1: Shield Fenced Code Blocks (```lang\ncode\n```) with header, language badge, copy button, and syntax highlighting
   let text = markdown.replace(/```([a-zA-Z0-9_-]*)\r?\n([\s\S]*?)```/gm, (_match, lang, code) => {
     const rawTrimmed = code.trim();
+    const normalizedLang = (lang || '').toLowerCase();
+
+    if (normalizedLang === 'graph') {
+      const encoded = encodeURIComponent(rawTrimmed);
+      const rendered = `<div class="hoshinote-embedded-graph" data-graph-source="${encoded}"></div>`;
+      const idx = tokens.length;
+      tokens.push(rendered);
+      return `___HOSHINOTE_TOKEN_${idx}___`;
+    }
+
+    if (normalizedLang === 'mermaid') {
+      const encoded = encodeURIComponent(rawTrimmed);
+      const rendered = `<div class="hoshinote-embedded-mermaid" data-mermaid-source="${encoded}"></div>`;
+      const idx = tokens.length;
+      tokens.push(rendered);
+      return `___HOSHINOTE_TOKEN_${idx}___`;
+    }
+
     const safeCode = highlightCode(rawTrimmed, lang);
     const displayLang = lang ? lang.toUpperCase() : 'TEXT';
     const langClass = lang ? ` class="language-${lang}"` : '';
