@@ -1,5 +1,7 @@
-import React, { useMemo, useRef, useImperativeHandle, forwardRef, useCallback } from 'react';
+import React, { useMemo, useRef, useImperativeHandle, forwardRef, useCallback, useEffect } from 'react';
+import ReactDOM from 'react-dom/client';
 import { parseMarkdownWithMath } from '../../lib/markdown';
+import { EmbeddedGraphBlock } from '../graph/EmbeddedGraphBlock';
 
 export interface MarkdownPreviewHandle {
   scrollToRatio: (ratio: number) => void;
@@ -22,6 +24,34 @@ export const MarkdownPreview = forwardRef<MarkdownPreviewHandle, MarkdownPreview
     const renderedHtml = useMemo(() => {
       return parseMarkdownWithMath(content, existingTitles);
     }, [content, existingTitles]);
+
+    // Hydrate embedded graph & mermaid blocks in markdown stream
+    useEffect(() => {
+      const el = containerRef.current;
+      if (!el) return;
+
+      const graphContainers = el.querySelectorAll<HTMLDivElement>('.hoshinote-embedded-graph, .hoshinote-embedded-mermaid');
+      const roots: Array<{ unmount: () => void }> = [];
+
+      graphContainers.forEach((container) => {
+        if (container.getAttribute('data-hydrated') === 'true') return;
+        container.setAttribute('data-hydrated', 'true');
+        const encoded = container.getAttribute('data-graph-source') || container.getAttribute('data-mermaid-source') || '';
+        const source = decodeURIComponent(encoded);
+
+        const root = ReactDOM.createRoot(container);
+        root.render(<EmbeddedGraphBlock source={source} />);
+        roots.push(root);
+      });
+
+      return () => {
+        for (const root of roots) {
+          try {
+            root.unmount();
+          } catch (_) {}
+        }
+      };
+    }, [renderedHtml]);
 
     // Handle Wikilink clicks & Codeblock copy button
     const handleClick = useCallback(

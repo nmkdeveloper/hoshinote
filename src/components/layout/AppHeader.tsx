@@ -1,7 +1,5 @@
 import React, { useRef, useState, useMemo } from 'react';
 import {
-  Network,
-  FileText,
   Search,
   Plus,
   PanelRight,
@@ -15,31 +13,25 @@ import type { ThemeConfig, BuiltinThemeId } from '../../types/theme';
 import { BUILTIN_THEMES, exportThemeToFile, loadThemeFromFile, getCustomThemes } from '../../lib/theme';
 
 interface AppHeaderProps {
-  currentView: 'editor' | 'graph';
-  onViewChange: (view: 'editor' | 'graph') => void;
   onNewNote: () => void;
   onOpenQuickSwitcher?: () => void;
   isSidebarOpen?: boolean;
   onToggleSidebar?: () => void;
   isInspectorOpen?: boolean;
   onToggleInspector?: () => void;
-  isGraphDockOpen?: boolean;
-  onToggleGraphDock?: () => void;
+  onCheckUpdates?: () => void;
   currentTheme?: ThemeConfig;
   onSelectTheme?: (theme: ThemeConfig) => void;
 }
 
 export const AppHeader: React.FC<AppHeaderProps> = ({
-  currentView,
-  onViewChange,
   onNewNote,
   onOpenQuickSwitcher,
   isSidebarOpen = true,
   onToggleSidebar,
   isInspectorOpen = true,
   onToggleInspector,
-  isGraphDockOpen = false,
-  onToggleGraphDock,
+  onCheckUpdates,
   currentTheme = BUILTIN_THEMES.dark,
   onSelectTheme,
 }) => {
@@ -310,62 +302,22 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
 
         <div className="h-4 w-px mx-0.5" style={{ backgroundColor: currentTheme.colors.border }} />
 
-        {/* Integrated Graph Dock Toggle (Wiki.js Style) */}
-        {onToggleGraphDock && (
+        {/* Check for Updates Button */}
+        {onCheckUpdates && (
           <button
-            onClick={onToggleGraphDock}
-            title={isGraphDockOpen ? 'Hide Integrated Graph Dock (Ctrl+G)' : 'Show Integrated Graph Dock (Ctrl+G - Wiki.js style)'}
-            className="flex items-center space-x-1 px-2 py-1 rounded text-xs border transition"
+            onClick={onCheckUpdates}
+            title="Check for GitHub Updates"
+            className="flex items-center space-x-1 px-2 py-1 rounded text-xs border transition hover:opacity-90"
             style={{
-              backgroundColor: isGraphDockOpen ? currentTheme.colors.bgTertiary : currentTheme.colors.bgPrimary,
-              borderColor: isGraphDockOpen ? currentTheme.colors.accent : currentTheme.colors.border,
-              color: isGraphDockOpen ? currentTheme.colors.accent : currentTheme.colors.textSecondary,
+              backgroundColor: currentTheme.colors.bgPrimary,
+              borderColor: currentTheme.colors.border,
+              color: currentTheme.colors.textSecondary,
             }}
           >
-            <Network className="w-3.5 h-3.5" />
-            <span className="hidden lg:inline text-[11px]">Graph Dock</span>
+            <Download className="w-3.5 h-3.5" style={{ color: currentTheme.colors.accent }} />
+            <span className="hidden lg:inline text-[11px]">Updates</span>
           </button>
         )}
-
-        {/* Full View Switcher */}
-        <div
-          className="flex p-0.5 rounded border"
-          style={{
-            backgroundColor: currentTheme.colors.bgPrimary,
-            borderColor: currentTheme.colors.border,
-          }}
-        >
-          <button
-            onClick={() => onViewChange('editor')}
-            title="Note Editor View"
-            data-view="editor"
-            aria-label="Note Editor View"
-            className="flex items-center space-x-1 px-2 py-0.5 rounded text-xs transition"
-            style={{
-              backgroundColor: currentView === 'editor' ? currentTheme.colors.bgTertiary : 'transparent',
-              color: currentView === 'editor' ? currentTheme.colors.accent : currentTheme.colors.textSecondary,
-              fontWeight: currentView === 'editor' ? 600 : 400,
-            }}
-          >
-            <FileText className="w-3 h-3" />
-            <span className="hidden xl:inline">Editor</span>
-          </button>
-          <button
-            onClick={() => onViewChange('graph')}
-            title="Full Interactive Graph Canvas"
-            data-view="graph"
-            aria-label="Full Interactive Graph Canvas"
-            className="flex items-center space-x-1 px-2 py-0.5 rounded text-xs transition"
-            style={{
-              backgroundColor: currentView === 'graph' ? currentTheme.colors.bgTertiary : 'transparent',
-              color: currentView === 'graph' ? currentTheme.colors.accent : currentTheme.colors.textSecondary,
-              fontWeight: currentView === 'graph' ? 600 : 400,
-            }}
-          >
-            <Network className="w-3 h-3" />
-            <span className="hidden xl:inline">Full Graph</span>
-          </button>
-        </div>
 
         {/* Inspector Toggle */}
         {onToggleInspector && (

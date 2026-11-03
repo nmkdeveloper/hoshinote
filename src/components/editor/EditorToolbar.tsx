@@ -14,10 +14,12 @@ import {
   Table,
   Quote,
   Download,
+  Sparkles,
+  Network,
 } from 'lucide-react';
 import type { ThemeConfig } from '../../types/theme';
 
-export type ViewMode = 'split' | 'editor' | 'preview';
+export type ViewMode = 'split' | 'editor' | 'preview' | 'liveview';
 
 export interface EditorToolbarProps {
   viewMode: ViewMode;
@@ -175,6 +177,16 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
 
         <button
           type="button"
+          onClick={() => onInsertFormat('```graph\nFrontend -> Backend: IPC\nBackend -> Database: SQL\n', '\n```', '')}
+          title="Insert Graph Block (```graph...```)"
+          className="p-1 rounded transition hover:opacity-80"
+          style={{ color: theme?.colors.accent || 'var(--color-accent)' }}
+        >
+          <Network className="w-3.5 h-3.5" />
+        </button>
+
+        <button
+          type="button"
           onClick={() => onInsertFormat('```\n', '\n```', 'code here')}
           title="Code Block (```...```)"
           className="p-1 rounded transition hover:opacity-80"
@@ -233,6 +245,21 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
           >
             <Columns className="w-3 h-3" />
             <span className="hidden sm:inline">Split</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onViewModeChange('liveview')}
+            title="Live View (Single pane, Word-like in-place editing)"
+            className="flex items-center space-x-1 px-2 py-0.5 rounded text-[11px] transition"
+            style={{
+              backgroundColor: viewMode === 'liveview' ? (theme?.colors.bgTertiary || 'var(--color-bg-tertiary)') : 'transparent',
+              color: viewMode === 'liveview' ? (theme?.colors.accent || 'var(--color-accent)') : (theme?.colors.textSecondary || 'var(--color-text-secondary)'),
+              fontWeight: viewMode === 'liveview' ? 600 : 400,
+            }}
+          >
+            <Sparkles className="w-3 h-3" />
+            <span className="hidden sm:inline">Live</span>
           </button>
 
           <button

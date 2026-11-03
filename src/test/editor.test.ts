@@ -59,14 +59,22 @@ function renderHook<TProps, TResult>(
       useMemo: (factory: () => any) => factory(),
     };
 
-    const secret = (React as any).__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
-    const prevDispatcher = secret.ReactCurrentDispatcher.current;
-    secret.ReactCurrentDispatcher.current = dispatcher;
+    const r = React as any;
+    let restore = () => {};
+    if (r.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE) {
+      const prev = r.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE.H;
+      r.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE.H = dispatcher;
+      restore = () => { r.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE.H = prev; };
+    } else if (r.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED?.ReactCurrentDispatcher) {
+      const prev = r.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED.ReactCurrentDispatcher.current;
+      r.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED.ReactCurrentDispatcher.current = dispatcher;
+      restore = () => { r.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED.ReactCurrentDispatcher.current = prev; };
+    }
 
     try {
       result.current = hookFn(currentProps);
     } finally {
-      secret.ReactCurrentDispatcher.current = prevDispatcher;
+      restore();
     }
   }
 
