@@ -21,7 +21,7 @@ The End-to-End (E2E) testing harness for Hoshinote is fully implemented, verifie
 ## 2. Test Execution & Verification
 
 ### Running the Full Test Suite
-The runner requires only standard Node.js (v18+ through v26+):
+The runner requires standard Node.js (v20+ / v22+ LTS through v26+):
 
 ```bash
 # Direct runner invocation

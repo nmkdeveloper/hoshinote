@@ -30,10 +30,10 @@ jobs:
           version: 12.5.1
           run_install: false
 
-      - name: Setup Node.js 20 LTS
+      - name: Setup Node.js 22 LTS
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'pnpm'
 
       - name: Install frontend dependencies
