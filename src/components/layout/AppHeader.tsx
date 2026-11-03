@@ -1,6 +1,5 @@
 import React, { useRef, useState, useMemo } from 'react';
 import {
-  Sparkles,
   Network,
   FileText,
   Search,
@@ -102,15 +101,11 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         )}
 
         <div className="flex items-center space-x-2">
-          <div
-            className="w-5.5 h-5.5 rounded-md flex items-center justify-center shadow-xs"
-            style={{
-              backgroundColor: currentTheme.colors.accent,
-              color: currentTheme.isDark ? '#000000' : '#ffffff',
-            }}
-          >
-            <Sparkles className="w-3.5 h-3.5 stroke-[2.5]" />
-          </div>
+          <img
+            src="/logo.png"
+            alt="Hoshinote Logo"
+            className="w-6 h-6 rounded-md object-cover shadow-xs border border-white/10 shrink-0"
+          />
           <span className="font-semibold text-xs tracking-tight hidden sm:inline" style={{ color: currentTheme.colors.textBold }}>
             Hoshinote
           </span>
